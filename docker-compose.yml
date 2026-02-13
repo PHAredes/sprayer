@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  openclaw:
+    build: .
+    container_name: openclaw-jobhunt
+    environment:
+      - IFLOW_API_KEY=${IFLOW_API_KEY}
+      - IFLOW_BASE_URL=https://apis.iflow.cn/v1
+      - IFLOW_MODEL=deepseek-v3.2  # or glm-4.6, qwen3-max, kimi-k2, deepseek-r1, etc.
+    volumes:
+      # Mount your actual CV directory (read-only)
+      - ~/cv:/app/cv_templates:ro
+      # Mount your email templates (create this)
+      - ./email_templates:/app/email_templates:ro
+      # Mount output directory for drafts
+      - ./outputs:/app/outputs
+      # Mount your custom scripts
+      - ./scripts:/app/scripts
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    network_mode: bridge

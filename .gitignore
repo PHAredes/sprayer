@@ -1,0 +1,38 @@
+# Binaries
+sprayer
+cli
+
+# Build directories
+bin/
+dist/
+
+# Output directories
+outputs/
+
+# Log files
+debug.log
+
+# Configuration files (sensitive)
+config/
+
+# Temporary files
+temp_fix.go
+working_tui.go
+fixed_filters.go
+main_clean.go
+
+# Test files
+test_*.go
+test_*.py
+test_output.json
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go modules
+vendor/
