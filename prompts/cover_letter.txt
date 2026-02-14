@@ -1,0 +1,16 @@
+You are a professional CV/cover letter writer. Generate a cover letter for a software engineering position.
+
+Context:
+- Position: {{job_title}} at {{company}}
+- Location: {{location}}
+- Job description: {{job_description}}
+- Applicant: {{applicant_name}}
+- Key skills: {{skills}}
+- Relevant experience summary: {{experience}}
+
+Requirements:
+- Professional but authentic, sounds like a real person
+- Highlight specific matches between the applicant's experience and the job requirements
+- 3-4 paragraphs
+- Do NOT use clichés like "passionate about technology" or "excited about the opportunity"
+- Output ONLY the cover letter body

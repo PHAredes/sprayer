@@ -1,0 +1,15 @@
+Summarize this job posting in a structured format for automated matching.
+
+Job posting:
+{{job_description}}
+
+Output a JSON object with these fields:
+- "title": the job title
+- "company": the company name
+- "required_skills": array of required technical skills
+- "optional_skills": array of nice-to-have skills
+- "experience_years": estimated years of experience required (integer, 0 if not specified)
+- "remote": boolean, true if remote work is available
+- "keywords": array of 5-10 key terms that characterize this role
+
+Output ONLY valid JSON, no markdown fences or explanations.

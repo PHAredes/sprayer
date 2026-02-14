@@ -1,0 +1,128 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.2cm]{geometry}
+\usepackage{lmodern} % Computer Modern improved
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{microtype} % Melhora a tipografia e justificação
+
+% Remove page numbers
+\pagestyle{empty}
+
+% Colors from CSS
+\definecolor{linkblue}{HTML}{0066cc}
+\definecolor{textblack}{HTML}{000000}
+\definecolor{headergray}{HTML}{333333}
+\definecolor{subtitlegray}{HTML}{555555}
+
+% Hyperlink setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linkblue,
+    urlcolor=linkblue,
+    pdftitle={Your Name - Job Title},
+    pdfauthor={Your Name}
+}
+
+% Section formatting
+\titleformat{\section}
+  {\normalfont\large\bfseries\uppercase}{\thesection}{1em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{10pt}{6pt}
+
+% Custom commands for layout
+\newcommand{\name}[1]{
+    \begin{center}
+        {\LARGE \textbf{\uppercase{#1}}}\\[2pt]
+    \end{center}
+}
+
+\newcommand{\jobtitle}[1]{
+    \begin{center}
+        {\large \textcolor{headergray}{#1}}\\[2pt]
+    \end{center}
+}
+
+\newcommand{\jobsubtitle}[1]{
+    \begin{center}
+        {\small \textcolor{subtitlegray}{#1}}\\[2pt]
+    \end{center}
+}
+
+\newcommand{\contact}[1]{
+    \begin{center}
+        {\small #1}
+    \end{center}
+}
+
+\newcommand{\tech}[1]{\textbf{#1}}
+
+% Entry header command
+\newcommand{\entry}[4]{
+    \noindent\textbf{#1} --- \textit{#2} \hfill #3\par
+}
+
+\begin{document}
+
+% Header
+\name{Your Name}
+\jobtitle{Software Engineer}
+\jobsubtitle{\tech{Skill 1} $\cdot$ \tech{Skill 2} $\cdot$ \tech{Skill 3}}
+
+\contact{
+    \href{mailto:email@example.com}{email@example.com} $\mid$
+    \href{https://linkedin.com/in/username}{linkedin.com/in/username} $\mid$
+    \href{https://github.com/username}{github.com/username} $\mid$
+    City, Country
+}
+
+\vspace{10pt}
+
+% Professional Summary
+\section*{Professional Summary}
+Summary of your experience and key achievements.
+
+% Work Experience
+\section*{Work Experience}
+
+\entry{Role Title}{Company Name}{Start – End}{}
+\begin{itemize}[leftmargin=*, noitemsep, topsep=0pt]
+    \item Key achievement or responsibility.
+    \item Another achievement.
+    \item \tech{Stack:} Tech 1, Tech 2, Tech 3.
+\end{itemize}
+
+\vspace{8pt}
+
+\entry{Previous Role}{Previous Company}{Start – End}{}
+\begin{itemize}[leftmargin=*, noitemsep, topsep=0pt]
+    \item Achievement.
+\end{itemize}
+
+% Projects
+\section*{Projects}
+
+\noindent\textbf{Project Name} \hfill \href{https://github.com/username/project}{GitHub}
+\vspace{-\parskip}
+\vspace{2pt}
+\begin{itemize}[leftmargin=12pt, noitemsep, topsep=0pt, labelsep=4pt]
+    \item Description of the project.
+\end{itemize}
+
+% Technical Skills
+\section*{Technical Skills}
+\begin{itemize}[leftmargin=*, noitemsep, topsep=0pt]
+    \item \textbf{Languages:} List of languages.
+    \item \textbf{Stack:} List of frameworks/tools.
+\end{itemize}
+
+% Education
+\section*{Education}
+\begin{itemize}[leftmargin=*, noitemsep, topsep=0pt]
+    \item Degree, University.
+\end{itemize}
+
+\end{document}

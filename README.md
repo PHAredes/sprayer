@@ -1,252 +1,76 @@
-# Job Scraper - TUI Application
+# Sprayer
 
-A powerful job scraping application with a beautiful terminal UI built with Go and Charm libraries. Scrapes jobs from multiple sources including LinkedIn, Indeed, Glassdoor, Reddit, RSS feeds, and APIs.
+Sprayer is an **agentic job application tool** designed to automate the painful parts of job hunting. It combines high-performance scraping, LLM-based personalization, and a terminal-native workflow.
 
 ## Features
 
-- **Beautiful TUI Interface**: Built with Charm's Bubble Tea framework
-- **Multi-Source Scraping**: Python and Go-based scrapers for maximum coverage
-- **Proxy Support**: Built-in proxy rotation to avoid IP blocks
-- **Real-time Progress**: Live updates during scraping
-- **Smart Filtering**: Filter by keywords, score, location, and company
-- **Export Options**: Save results to JSON format
-- **Score-based Ranking**: Jobs scored based on CV keyword matching
-- **TDD Approach**: Comprehensive test coverage
+- **Multi-Source Scraping**: Scrapes Hacker News (Who is Hiring), RemoteOK, WeWorkRemotely, Arbeitnow, Jobicy, LinkedIn, Indeed, Glassdoor, and specialized RSS feeds (Golang, Rust, etc.).
+- **LLM Integration**: Uses OpenAI-compatible APIs (e.g. iFlow / Moonshot K2) to generate personalized cover letters and emails.
+- **TUI & CLI**: Beautiful terminal user interface (Bubble Tea) and scriptable CLI.
+- **Compositional Design**: Unix-philosophy architecture — scrapers, filters, and matchers are composable pipelines.
+- **Local-First**: fast SQLite storage, local profiles, mu4e-compatible email drafts.
 
 ## Installation
 
-### Prerequisites
-
-- Go 1.21 or later
-- Python 3.8 or later
-- Docker (optional, for containerized execution)
-
-### Setup
-
-1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd job-scraper
+git clone https://github.com/user/sprayer.git
+cd sprayer
+go mod tidy
+go build -o sprayer ./cmd/sprayer/main.go
+go build -o sprayer-cli ./cmd/cli/main.go
 ```
 
-2. Install Go dependencies:
-```bash
-go mod download
-```
+## Configuration
 
-3. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
+Set up your LLM credentials (required for email generation):
 
-4. (Optional) Set up proxies:
 ```bash
-# Edit config/proxies.txt with your proxy list
-cp config/proxies.txt.example config/proxies.txt
+export SPRAYER_LLM_URL="https://apis.iflow.cn/v1"  # or https://api.openai.com/v1
+export SPRAYER_LLM_KEY="your-api-key"
+export SPRAYER_LLM_MODEL="kimi-k2"                 # or gpt-4o, deepseek-v3, etc.
 ```
 
 ## Usage
 
-### Running the Application
+### Interactive TUI
 
+Run `./sprayer` to enter the interactive mode.
+
+- **s**: Scrape new jobs
+- **f**: Filter by keywords
+- **p**: Switch profiles
+- **a**: Apply (generate email draft)
+- **j/k**: Navigation
+- **Enter**: View details
+
+### CLI Automation
+
+Scrape and save to DB:
 ```bash
-# Run the TUI application
-go run main_with_scrapers.go
+./sprayer-cli scrape "rust" "remote"
 ```
 
-### Key Controls
-
-- `s` - Start scraping jobs
-- `f` - Open filter menu
-- `Enter` - View job details
-- `Esc` - Go back / Stop scraping
-- `r` - Refresh job list
-- `e` - Export jobs
-- `q` - Quit
-
-### Python Scrapers
-
-The system includes Python scrapers for specialized sources:
-
+List and filter jobs:
 ```bash
-# Run enhanced scraper with proxy support
-python scripts/enhanced_scraper_with_proxy.py
-
-# Run Greenhouse scraper
-python scripts/greenhouse_scraper.py
+./sprayer-cli list --keywords "rust,compiler" --min-score 80
 ```
 
-## Architecture
-
-### Components
-
-1. **Go TUI Application** (`main_with_scrapers.go`)
-   - Terminal user interface
-   - Scraping orchestration
-   - Real-time updates
-
-2. **Go Scrapers** (`scrapers/scrapers.go`)
-   - Web scraping with Colly
-   - API integration
-   - RSS feed parsing
-
-3. **Python Scrapers** (`scripts/`)
-   - LinkedIn scraper with proxy support
-   - Greenhouse job board scraper
-   - Enhanced scraper with anti-scraping techniques
-
-4. **Configuration** (`config/`)
-   - Proxy settings
-   - API keys
-   - Scraper settings
-
-### Job Scoring System
-
-Jobs are scored based on keyword matching:
-
-- **High-value keywords** (10 points): Rust, C++, Haskell, LLVM, Compiler, WebAssembly
-- **Medium-value keywords** (7-8 points): Go, Embedded, Systems, Performance, Algorithms
-- **Low-value keywords** (3-5 points): Git, Docker, Remote, Developer
-
-Blocked keywords reduce the score by 10 points each.
-
-## Testing
-
-### Run All Tests
-
+Apply to a specific job (generates draft):
 ```bash
-# Run Go tests
-go test ./...
-
-# Run with coverage
-go test -cover ./...
-
-# Run Python tests
-python -m pytest tests/
+./sprayer-cli apply --job "hn-123456" --prompt "email_cold"
 ```
 
-### Test Coverage
+## Project Structure
 
-- Unit tests for all components
-- Integration tests for full workflow
-- Benchmark tests for performance
-- TDD approach with comprehensive coverage
-
-## Configuration
-
-### Proxy Configuration
-
-Edit `config/proxies.txt`:
-```
-# Add your proxies here
-http://proxy1.example.com:8080
-http://user:pass@proxy2.example.com:8080
-socks5://proxy3.example.com:1080
-```
-
-### Scraper Settings
-
-Edit `config/scraper_config.json`:
-```json
-{
-  "max_workers": 20,
-  "rate_limit_delay": 2.0,
-  "user_agents": [...],
-  "blocked_keywords": [...],
-  "search_queries": [...]
-}
-```
-
-## Output
-
-Jobs are saved to `/tmp/job-scraper/` (or your configured output directory):
-- `jobs_[scraper]_[timestamp].json` - Individual scraper results
-- `jobs_combined_[timestamp].json` - All jobs combined
-- `jobs_export_[timestamp].json` - Exported filtered jobs
-
-## Development
-
-### TDD Approach
-
-1. Write tests first
-2. Implement functionality
-3. Refactor and optimize
-4. Ensure all tests pass
-
-### Adding New Scrapers
-
-1. Implement the `Scraper` interface:
-```go
-type Scraper interface {
-    Scrape() ([]Job, error)
-    GetName() string
-}
-```
-
-2. Add tests in `*_test.go`
-3. Register in `CreateDefaultScrapers()`
-4. Update documentation
-
-### Code Style
-
-- Follow Go conventions
-- Use meaningful variable names
-- Add comments for complex logic
-- Keep functions small and focused
-
-## Performance
-
-- Concurrent scraping with goroutines
-- Rate limiting to avoid blocks
-- Efficient data structures
-- Minimal memory footprint
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Proxy not working**: Check proxy format and connectivity
-2. **Scrapers blocked**: Increase delays and rotate proxies
-3. **No jobs found**: Check filters and keywords
-4. **TUI not rendering**: Check terminal compatibility
-
-### Debug Mode
-
-Enable debug logging:
-```bash
-export DEBUG=true
-go run main_with_scrapers.go
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+- `cmd/`: Entrypoints (`sprayer`, `cli`)
+- `internal/job/`: Core domain model, storage, and pipeline logic
+- `internal/scraper/`: Concrete scrapers (HN, LinkedIn, etc.)
+- `internal/profile/`: Profile management and matching logic
+- `internal/llm/`: LLM client and prompt management
+- `internal/apply/`: Email generation and export
+- `internal/ui/`: TUI and CLI implementation
+- `prompts/`: Text templates for LLM generation
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- [Charm](https://charm.sh/) for beautiful TUI libraries
-- [Colly](https://github.com/gocolly/colly) for web scraping
-- [Scrapy](https://scrapy.org/) for inspiration
-- The open-source community for various scraping techniques
-
-## FAQ
-
-### Q: How many jobs can it find?
-A: The system is designed to find 300+ jobs from multiple sources. Actual count depends on your filters and market conditions.
-
-### Q: Is it legal to scrape job sites?
-A: Scraping for personal use is generally acceptable, but respect robots.txt and rate limits. For commercial use, check terms of service.
-
-### Q: How do I avoid getting blocked?
-A: Use rotating proxies, respect rate limits, and vary user agents. The system includes built-in protection.
-
-### Q: Can I add custom job boards?
-A: Yes! Implement the Scraper interface and add it to the manager. See the documentation for details.
+MIT

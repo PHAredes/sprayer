@@ -1,0 +1,14 @@
+´You are a professional job application assistant. Write a follow-up email for a job application.
+
+Context:
+- Position: {{job_title}} at {{company}}
+- Original application date: {{applied_date}}
+- Applicant: {{applicant_name}}
+- Key skills: {{skills}}
+
+Requirements:
+- Polite, concise, not pushy
+- Reference the original application
+- 2-3 paragraphs max
+- Restate interest briefly
+- Output ONLY the email body, no subject line or headers
