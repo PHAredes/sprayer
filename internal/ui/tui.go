@@ -6,6 +6,7 @@ import (
 
 	bubblekey "github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,6 +15,7 @@ import (
 	"sprayer/internal/apply"
 	"sprayer/internal/job"
 	"sprayer/internal/llm"
+	"sprayer/internal/parse"
 	"sprayer/internal/profile"
 	"sprayer/internal/scraper"
 )
@@ -27,6 +29,7 @@ const (
 	stateProfiles
 	stateScraping
 	stateHelp
+	stateReviewEmail
 )
 
 type Model struct {
@@ -50,6 +53,12 @@ type Model struct {
 	spinner      spinner.Model
 	filterInput  textinput.Model
 	viewport     viewport.Model
+	reviewInput  textarea.Model
+	
+	// Review state
+	reviewJob    *job.Job
+	reviewTraps  []string
+	reviewSubject string
 
 	// Services
 	store        *job.Store
@@ -93,6 +102,10 @@ func NewModel() (Model, error) {
 	fi.Placeholder = "Filter keywords..."
 	fi.Cursor.Style = lipgloss.NewStyle().Foreground(colorMauve)
 
+	ta := textarea.New()
+	ta.Placeholder = "Email content..."
+	ta.Focus()
+
 	return Model{
 		store:        s,
 		profileStore: pStore,
@@ -102,6 +115,7 @@ func NewModel() (Model, error) {
 		activeProfile: active,
 		spinner:      sp,
 		filterInput:  fi,
+		reviewInput:  ta,
 		llmClient:    llm.NewClient(),
 		state:        stateJobList,
 	}, nil
@@ -145,6 +159,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, m.updateProfiles(msg))
 		case stateScraping:
 			// logic handled in async message
+		case stateReviewEmail:
+			cmds = append(cmds, m.updateReviewEmail(msg))
 		}
 
 	case tea.WindowSizeMsg:
@@ -164,7 +180,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case errMsg:
 		m.err = msg.error
 		m.state = stateJobList // return to list so user sees error in footer
-	}
+		
+	case emailGeneratedMsg:
+		m.reviewSubject = msg.subject
+		m.reviewInput.SetValue(msg.body)
+		m.reviewInput.Focus()
+		// If traps found, append to status?
+		if len(m.reviewTraps) > 0 {
+			m.statusMsg = fmt.Sprintf("WARNING: Traps detected: %v", m.reviewTraps)
+		} else {
+			m.statusMsg = "Draft generated. Edit and Ctrl+Enter to send."
+		}
 
 	m.spinner, cmd = m.spinner.Update(msg)
 	cmds = append(cmds, cmd)
@@ -216,19 +242,57 @@ func (m *Model) updateJobList(msg tea.KeyMsg) tea.Cmd {
 	case bubblekey.Matches(msg, Keys.Send):
 		if len(m.filteredJobs) > 0 {
 			j := m.filteredJobs[m.cursor]
-			m.statusMsg = fmt.Sprintf("Generating and sending email to %s...", j.Company)
-			go func() {
-				// Generate content first
-				subject, body, _ := apply.GenerateEmail(j, m.activeProfile, m.llmClient, "email_cold")
-				// Then send directly
-				err := apply.SendDirect(j.Email, subject, body, m.activeProfile.CVPath)
+			m.reviewJob = &j
+			m.reviewTraps = parse.CheckForTraps(j.Description)
+			
+			m.state = stateReviewEmail
+			m.statusMsg = fmt.Sprintf("Generating draft for %s...", j.Company)
+			
+			// Async generate and update textarea
+			return func() tea.Msg {
+				subject, body, err := apply.GenerateEmail(j, m.activeProfile, m.llmClient, "email_cold")
 				if err != nil {
-					// In a real app we'd dispatch an error Msg
+					return errMsg{err}
 				}
-			}()
+				// Prepend subject to body for editing? Or handle separately.
+				// Pop style: We just send body. Subject is usually separate.
+				// For now, let's put Subject as first line?
+				// Or better: Just body. Subject stays fixed or editable?
+				// Let's make it Body only for simplicity, Subject is generated.
+				// Or: "Subject: ... \n\n Body..." and parse it back?
+				// Let's keep it simple: Edit Body.
+				return emailGeneratedMsg{subject: subject, body: body}
+			}
 		}
 	}
 	return nil
+}
+
+type emailGeneratedMsg struct {
+	subject, body string
+} 
+
+func (m *Model) updateReviewEmail(msg tea.KeyMsg) tea.Cmd {
+	switch {
+	case bubblekey.Matches(msg, Keys.Esc):
+		m.state = stateJobList
+		m.statusMsg = "Draft cancelled"
+		return nil
+	case msg.String() == "ctrl+enter":
+		// Send
+		if m.reviewJob != nil {
+			go func(j job.Job, p profile.Profile, subject, body string) {
+				apply.SendDirect(j.Email, subject, body, p.CVPath)
+			}(*m.reviewJob, m.activeProfile, m.reviewSubject, m.reviewInput.Value())
+			
+			m.state = stateJobList
+			m.statusMsg = fmt.Sprintf("Sent email to %s!", m.reviewJob.Company)
+		}
+		return nil
+	}
+	var cmd tea.Cmd
+	m.reviewInput, cmd = m.reviewInput.Update(msg)
+	return cmd
 }
 
 func (m *Model) updateJobDetail(msg tea.KeyMsg) tea.Cmd {
@@ -320,6 +384,8 @@ func (m Model) View() string {
 		return m.viewFilters()
 	case stateProfiles:
 		return m.viewProfiles()
+	case stateReviewEmail:
+		return m.viewReviewEmail()
 	case stateHelp:
 		return m.viewHelp()
 	default:

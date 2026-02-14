@@ -52,6 +52,8 @@ func (c *CLI) Run() {
 		c.handleApply()
 	case "profile":
 		c.handleProfile()
+	case "setup":
+		c.handleSetup()
 	default:
 		c.printUsage()
 	}
@@ -67,7 +69,10 @@ Commands:
   scrape   Fetch jobs from all sources
   list     List and filter jobs (pipeable)
   apply    Apply to a specific job (generates draft)
-  profile  Manage profiles`)
+  list     List and filter jobs (pipeable)
+  apply    Apply to a specific job (generates draft)
+  profile  Manage profiles
+  setup    Configure SMTP and LLM settings`)
 }
 
 func (c *CLI) handleScrape() {

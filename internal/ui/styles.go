@@ -65,6 +65,12 @@ var (
 			Padding(1).
 			Margin(0, 1)
 
+	queryBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(colorMauve).
+			Padding(1).
+			Margin(0, 1)
+
 	styleFooter = lipgloss.NewStyle().
 			Foreground(colorSubtext1).
 			Background(colorSurface0).

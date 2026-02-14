@@ -113,6 +113,22 @@ Env Vars:
 	)
 }
 
+func (m Model) viewReviewEmail() string {
+	headerText := fmt.Sprintf("Review Email to %s @ %s", m.reviewJob.Title, m.reviewJob.Company)
+	if len(m.reviewTraps) > 0 {
+		headerText += fmt.Sprintf("\n⚠️  TRAPS: %v", m.reviewTraps)
+	}
+	
+	header := styleTitle.Render(headerText)
+	
+	input := queryBoxStyle.Render(m.reviewInput.View()) // Need to define queryBoxStyle or stick to styleBox
+	
+	footerText := fmt.Sprintf("Attachment: %s • Ctrl+Enter: Send • Esc: Cancel", m.activeProfile.CVPath)
+	footer := styleFooter.Width(m.width).Render(footerText)
+	
+	return lipgloss.JoinVertical(lipgloss.Left, header, input, footer)
+}
+
 func (m Model) visibleRange() (int, int) {
 	height := m.height - 6 // Header + footer + box padding
 	if height <= 0 {
