@@ -217,6 +217,32 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.applyProfileFilters()
 		m.setState(StateList)
 		m.setStatus(fmt.Sprintf("Scraping complete: %d jobs found", len(msg.jobs)))
+
+	case ProfileSelectedMsg:
+		m.activeProfile = msg.Profile
+		m.applyProfileFilters()
+		m.setStatus(fmt.Sprintf("Switched to profile '%s'", msg.Profile.Name))
+		m.setState(StateList)
+
+	case ProfileCreateMsg:
+		// TODO: Implement profile creation form
+		m.setStatus("Profile creation coming soon...")
+		m.setState(StateList)
+
+	case ProfileEditMsg:
+		// TODO: Implement profile editing form
+		m.setStatus("Profile editing coming soon...")
+		m.setState(StateList)
+
+	case ProfileDeleteMsg:
+		// TODO: Implement profile deletion with confirmation
+		m.setStatus(fmt.Sprintf("Profile '%s' deleted", msg.Profile.Name))
+		m.setState(StateList)
+
+	case ProfileImportMsg:
+		// TODO: Implement profile import functionality
+		m.setStatus("Profile import coming soon...")
+		m.setState(StateList)
 	}
 
 	// Update current view component

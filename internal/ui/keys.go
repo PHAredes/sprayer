@@ -5,23 +5,27 @@ import (
 )
 
 type KeyMap struct {
-	Up          key.Binding
-	Down        key.Binding
-	Left        key.Binding
-	Right       key.Binding
-	Enter       key.Binding
-	Esc         key.Binding
-	Quit        key.Binding
-	Scrape      key.Binding
-	Filter      key.Binding
-	Profiles    key.Binding
-	Apply       key.Binding
-	Send        key.Binding
-	Help        key.Binding
-	Tab         key.Binding
-	Back        key.Binding
-	Sort        key.Binding
-	ClearFilter key.Binding
+	Up            key.Binding
+	Down          key.Binding
+	Left          key.Binding
+	Right         key.Binding
+	Enter         key.Binding
+	Esc           key.Binding
+	Quit          key.Binding
+	Scrape        key.Binding
+	Filter        key.Binding
+	Profiles      key.Binding
+	Apply         key.Binding
+	Send          key.Binding
+	Help          key.Binding
+	Tab           key.Binding
+	Back          key.Binding
+	Sort          key.Binding
+	ClearFilter   key.Binding
+	NewProfile    key.Binding
+	EditProfile   key.Binding
+	DeleteProfile key.Binding
+	ImportProfile key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view.
@@ -108,5 +112,21 @@ var Keys = KeyMap{
 	ClearFilter: key.NewBinding(
 		key.WithKeys("c"),
 		key.WithHelp("c", "clear filter"),
+	),
+	NewProfile: key.NewBinding(
+		key.WithKeys("n"),
+		key.WithHelp("n", "new profile"),
+	),
+	EditProfile: key.NewBinding(
+		key.WithKeys("e"),
+		key.WithHelp("e", "edit profile"),
+	),
+	DeleteProfile: key.NewBinding(
+		key.WithKeys("d"),
+		key.WithHelp("d", "delete profile"),
+	),
+	ImportProfile: key.NewBinding(
+		key.WithKeys("i"),
+		key.WithHelp("i", "import profile"),
 	),
 }

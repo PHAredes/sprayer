@@ -64,11 +64,42 @@ func (p *ProfileView) SetSize(width, height int) {
 func (p *ProfileView) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, Keys.Up):
-			p.MoveCursor(true)
-		case key.Matches(msg, Keys.Down):
-			p.MoveCursor(false)
+		return p.handleKeyMsg(msg)
+	}
+	return nil
+}
+
+func (p *ProfileView) handleKeyMsg(msg tea.KeyMsg) tea.Cmd {
+	switch {
+	case key.Matches(msg, Keys.Up):
+		p.MoveCursor(true)
+	case key.Matches(msg, Keys.Down):
+		p.MoveCursor(false)
+	case key.Matches(msg, Keys.Enter):
+		if p.cursor < len(p.profiles) {
+			return func() tea.Msg {
+				return ProfileSelectedMsg{Profile: p.profiles[p.cursor]}
+			}
+		}
+	case key.Matches(msg, Keys.NewProfile):
+		return func() tea.Msg {
+			return ProfileCreateMsg{}
+		}
+	case key.Matches(msg, Keys.EditProfile):
+		if p.cursor < len(p.profiles) {
+			return func() tea.Msg {
+				return ProfileEditMsg{Profile: p.profiles[p.cursor]}
+			}
+		}
+	case key.Matches(msg, Keys.DeleteProfile):
+		if p.cursor < len(p.profiles) && len(p.profiles) > 1 {
+			return func() tea.Msg {
+				return ProfileDeleteMsg{Profile: p.profiles[p.cursor]}
+			}
+		}
+	case key.Matches(msg, Keys.ImportProfile):
+		return func() tea.Msg {
+			return ProfileImportMsg{}
 		}
 	}
 	return nil
@@ -103,7 +134,7 @@ func (p *ProfileView) View(width, height int) string {
 
 func (p *ProfileView) renderHeader() string {
 	title := Styles.Title.Render("Profiles")
-	help := Styles.MutedText.Render("↑/↓: select • Enter: apply • Esc: back")
+	help := Styles.MutedText.Render("↑/↓: navigate • Enter: select • N: new • E: edit • D: delete • I: import • Esc: back")
 
 	return lipgloss.JoinHorizontal(lipgloss.Top,
 		Styles.Header.Width(p.width/2).Render(title),
@@ -219,3 +250,20 @@ func (p *ProfileView) renderProfileDetails() string {
 		lipgloss.JoinVertical(lipgloss.Left, sections...),
 	)
 }
+
+// Message types for profile operations
+type ProfileSelectedMsg struct {
+	Profile profile.Profile
+}
+
+type ProfileCreateMsg struct{}
+
+type ProfileEditMsg struct {
+	Profile profile.Profile
+}
+
+type ProfileDeleteMsg struct {
+	Profile profile.Profile
+}
+
+type ProfileImportMsg struct{}
