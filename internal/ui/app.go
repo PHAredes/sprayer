@@ -17,14 +17,17 @@ import (
 // App represents the main TUI application following charm patterns
 type App struct {
 	// Core state
-	state  AppMode
-	width  int
-	height int
+	state       AppMode
+	width       int
+	height      int
+	statusMsg   string
+	statusTimer int
 
 	// Data
-	jobs         []job.Job
-	filteredJobs []job.Job
-	profiles     []profile.Profile
+	jobs          []job.Job
+	filteredJobs  []job.Job
+	profiles      []profile.Profile
+	activeProfile profile.Profile
 
 	// Components
 	header      *Header
@@ -199,10 +202,22 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case AppScraperErrorMsg:
-		// Handle scraper errors
+		// Handle scraper errors with user-friendly messages
 		if a.scraper != nil {
 			a.scraper.SetError(msg.Error)
 		}
+		// Also show error in status for better visibility
+		a.setStatus(fmt.Sprintf("Scraping error: %v", msg.Error))
+		return a, nil
+
+	case FiltersAppliedMsg:
+		// Apply filters and return to job list
+		a.activeProfile = msg.Profile
+		a.state = ModeJobs
+
+		// Apply filtering to job list
+		a.applyFilters()
+
 		return a, nil
 	}
 
@@ -320,6 +335,26 @@ func (a *App) updateProfiles(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	return a, nil
+}
+
+func (a *App) setStatus(msg string) {
+	a.statusMsg = msg
+	a.statusTimer = 300 // Show for 5 seconds (300 frames at 60fps)
+}
+
+func (a *App) applyFilters() {
+	// Load all jobs and apply profile filtering
+	allJobs, _ := a.store.All()
+
+	// Apply profile filters
+	filters := a.activeProfile.GenerateFilters()
+	pipeline := job.Pipe(filters...)
+	filteredJobs := pipeline(allJobs)
+
+	// Update the job list
+	a.jobs = filteredJobs
+	a.filteredJobs = filteredJobs
+	a.jobList.SetJobs(filteredJobs)
 }
 
 func (a *App) updateScraping(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -449,13 +484,25 @@ func (a *App) View() string {
 		return a.renderHelp()
 	}
 
-	// Build full layout with header and footer
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		a.header.View(),
-		content,
-		a.footer.View(a.state),
-	)
+	// Build full layout with header, content, status, and footer
+	statusBar := ""
+	if a.statusMsg != "" && a.statusTimer > 0 {
+		statusStyle := lipgloss.NewStyle().
+			Background(Colors.Surface).
+			Foreground(Colors.Text).
+			Padding(0, 1).
+			Width(a.width)
+		statusBar = statusStyle.Render(a.statusMsg)
+		a.statusTimer--
+	}
+
+	layout := []string{a.header.View()}
+	if statusBar != "" {
+		layout = append(layout, statusBar)
+	}
+	layout = append(layout, content, a.footer.View(a.state))
+
+	return lipgloss.JoinVertical(lipgloss.Left, layout...)
 }
 
 func (a *App) renderHelp() string {
@@ -470,23 +517,60 @@ func (a *App) renderHelp() string {
 		Foreground(Colors.Primary).
 		Bold(true).
 		MarginBottom(1).
-		Render("Sprayer - Help")
+		Render("🎯 Sprayer - Help")
 
-	// Use charm help component for better formatting
-	jobHelp := a.helpView.View(JobKeys)
-	globalHelp := a.helpView.View(GlobalKeys)
+	// Create better formatted help sections
+	sections := []string{title, ""}
 
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		title,
-		"",
-		"Job List Keys:",
-		jobHelp,
-		"",
-		"Global Keys:",
-		globalHelp,
+	// Job List Mode
+	jobSection := lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.NewStyle().Foreground(Colors.Accent).Bold(true).Render("📋 Job List Mode:"),
+		"  s      - Scrape for new jobs",
+		"  f      - Open filter settings",
+		"  p      - Manage profiles",
+		"  ↑↓/jk  - Navigate job list",
+		"  enter  - View job details",
+		"  a      - Apply to selected job",
 	)
+	sections = append(sections, jobSection, "")
 
+	// Job Detail Mode
+	detailSection := lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.NewStyle().Foreground(Colors.Accent).Bold(true).Render("🔍 Job Detail Mode:"),
+		"  esc    - Return to job list",
+		"  a      - Generate application",
+	)
+	sections = append(sections, detailSection, "")
+
+	// Filter Mode
+	filterSection := lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.NewStyle().Foreground(Colors.Accent).Bold(true).Render("🔧 Filter Mode:"),
+		"  tab    - Next field",
+		"  enter  - Apply filters",
+		"  esc    - Cancel changes",
+	)
+	sections = append(sections, filterSection, "")
+
+	// Global Keys
+	globalSection := lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.NewStyle().Foreground(Colors.Accent).Bold(true).Render("🌍 Global Keys:"),
+		"  ?      - Show this help",
+		"  q      - Quit application",
+		"  ctrl+c - Force quit",
+	)
+	sections = append(sections, globalSection, "")
+
+	// Tips
+	tipsSection := lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.NewStyle().Foreground(Colors.Warning).Bold(true).Render("💡 Tips:"),
+		"  • Use filters to narrow down jobs by keywords, location, salary",
+		"  • Profiles help you customize your job search preferences",
+		"  • The scraper runs incrementally - jobs appear as they're found",
+		"  • Check job details for application requirements and red flags",
+	)
+	sections = append(sections, tipsSection)
+
+	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
 	return helpStyle.Render(content)
 }
 
@@ -590,6 +674,11 @@ type (
 
 	AppScraperErrorMsg struct {
 		Error error
+	}
+
+	// Message from filter view
+	FiltersAppliedMsg struct {
+		Profile profile.Profile
 	}
 )
 

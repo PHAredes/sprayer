@@ -251,7 +251,4 @@ func (f *FilterView) collectInput() profile.Profile {
 	return updatedProfile
 }
 
-// FiltersAppliedMsg is sent when filters are applied
-type FiltersAppliedMsg struct {
-	Profile profile.Profile
-}
+// FiltersAppliedMsg is handled by the main app (defined in app.go)
