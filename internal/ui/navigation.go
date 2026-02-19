@@ -1,5 +1,7 @@
 package ui
 
+import "strings"
+
 // NavigationHistory manages state history for proper back navigation
 type NavigationHistory struct {
 	history []AppState
