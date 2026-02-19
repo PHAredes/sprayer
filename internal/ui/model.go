@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -50,9 +51,11 @@ type Model struct {
 	profileStore *profile.Store
 	llmClient    interface{} // Will be properly typed
 
-	// Navigation
-	lastState AppState
-	showHelp  bool
+	// Navigation and scraping
+	navigation    *NavigationHistory
+	scraper       *scraper.IncrementalScraper
+	scraperCancel context.CancelFunc
+	showHelp      bool
 }
 
 // AppState represents the current application state
@@ -120,6 +123,7 @@ func NewModel() (Model, error) {
 		filterInput:   filterInput,
 		emailInput:    emailInput,
 		helpView:      help.New(),
+		navigation:    NewNavigationHistory(),
 	}
 
 	// Initialize components
@@ -163,7 +167,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.showHelp = !m.showHelp
 			return m, nil
 		case key.Matches(msg, Keys.Esc):
-			if m.state != StateList {
+			if m.navigation.CanBack() {
+				previousState := m.navigation.Back()
+				m.state = previousState
+			} else if m.state != StateList {
 				m.setState(StateList)
 			}
 			return m, nil
@@ -190,6 +197,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = msg.err
 		m.setStatus(fmt.Sprintf("Error: %v", msg.err))
 		m.setState(StateList)
+
+	case scraperStartedMsg:
+		m.scraper = msg.scraper
+		m.setStatus("Scraping started...")
+		// Start monitoring progress
+		return m, m.monitorScraper()
+
+	case scraperProgressMsg:
+		m.setStatus(fmt.Sprintf("Scraping %s: %s", msg.progress.Source, msg.progress.Status))
+
+	case scraperJobMsg:
+		// Add job to list in real-time
+		m.jobs = append(m.jobs, msg.job)
+		m.applyProfileFilters()
+
+	case scraperCompleteMsg:
+		m.jobs = msg.jobs
+		m.applyProfileFilters()
+		m.setState(StateList)
+		m.setStatus(fmt.Sprintf("Scraping complete: %d jobs found", len(msg.jobs)))
 	}
 
 	// Update current view component
@@ -293,6 +320,12 @@ func (m *Model) renderHeader() string {
 	profileInfo := fmt.Sprintf("Profile: %s", m.activeProfile.Name)
 	jobCount := fmt.Sprintf("Jobs: %d/%d", len(m.filteredJobs), len(m.jobs))
 
+	// Add breadcrumb navigation
+	breadcrumb := m.navigation.GetBreadcrumb()
+	if breadcrumb != "" {
+		profileInfo = fmt.Sprintf("%s → %s", breadcrumb, profileInfo)
+	}
+
 	left := Styles.HeaderText.Render(profileInfo)
 	center := Styles.Title.Render("Sprayer")
 	right := Styles.HeaderText.Render(jobCount)
@@ -330,7 +363,7 @@ func (m *Model) updateCurrentView(msg tea.Msg) tea.Cmd {
 
 // state management
 func (m *Model) setState(state AppState) {
-	m.lastState = m.state
+	m.navigation.Push(state)
 	m.state = state
 }
 
@@ -453,19 +486,66 @@ func (m *Model) clearFilters() {
 
 func (m *Model) startScraping() tea.Cmd {
 	return func() tea.Msg {
-		// Use new profile-based scraper
-		s := scraper.ProfileBasedScraper(m.activeProfile)
-		jobs, err := s()
-		if err != nil {
-			return errorMsg{err}
-		}
-		return jobsLoadedMsg{jobs}
+		ctx, cancel := context.WithCancel(context.Background())
+		m.scraperCancel = cancel
+
+		// Create incremental scraper
+		incrementalScraper := scraper.NewIncrementalScraper(ctx, m.activeProfile)
+		incrementalScraper.Start()
+
+		// Start background goroutine to handle results and progress
+		go func() {
+			var allJobs []job.Job
+
+			// Handle progress updates
+			go func() {
+				for progress := range incrementalScraper.Progress() {
+					// Send progress update (would be handled by TUI loop)
+					_ = progress
+				}
+			}()
+
+			// Collect all jobs
+			for job := range incrementalScraper.Results() {
+				allJobs = append(allJobs, job)
+			}
+
+			// Send completion message when done
+			// This would trigger UI update
+		}()
+
+		return scraperStartedMsg{scraper: incrementalScraper}
 	}
 }
 
 func (m *Model) setStatus(msg string) {
 	m.statusMsg = msg
 	m.statusTimer = 60 // Show for ~3 seconds at 20fps
+}
+
+func (m *Model) monitorScraper() tea.Cmd {
+	return func() tea.Msg {
+		if m.scraper == nil {
+			return nil
+		}
+
+		// Monitor progress
+		go func() {
+			for progress := range m.scraper.Progress() {
+				// Send progress update
+				// This would be handled by the TUI update loop
+				_ = progress
+			}
+		}()
+
+		// Collect jobs
+		var allJobs []job.Job
+		for job := range m.scraper.Results() {
+			allJobs = append(allJobs, job)
+		}
+
+		return scraperCompleteMsg{jobs: allJobs}
+	}
 }
 
 func (m *Model) getStatusInfo() StatusBarInfo {
@@ -494,4 +574,25 @@ type StatusInfo struct {
 	JobCount    int
 	TotalJobs   int
 	statusTimer int
+}
+
+// Scraper messages
+type scraperStartedMsg struct {
+	scraper *scraper.IncrementalScraper
+}
+
+type scraperProgressMsg struct {
+	progress scraper.ScraperProgress
+}
+
+type scraperJobMsg struct {
+	job job.Job
+}
+
+type scraperCompleteMsg struct {
+	jobs []job.Job
+}
+
+type scraperErrorMsg struct {
+	err error
 }
