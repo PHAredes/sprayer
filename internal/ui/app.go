@@ -47,6 +47,9 @@ type AppMode int
 
 const (
 	ModeJobs AppMode = iota
+	ModeJobDetail
+	ModeFilters
+	ModeProfiles
 	ModeScraping
 	ModeHelp
 )

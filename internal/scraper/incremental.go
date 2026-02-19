@@ -207,22 +207,28 @@ func (is *IncrementalScraper) sendProgress(sourceName string, jobsFound, totalSo
 func (is *IncrementalScraper) getScraperSources() []ScraperSource {
 	return []ScraperSource{
 		{name: "Hacker News", fn: func(ctx context.Context, keywords []string, location string) ([]job.Job, error) {
-			return HN()()
+			scraper := HN()
+			return scraper()
 		}},
 		{name: "RemoteOK", fn: func(ctx context.Context, keywords []string, location string) ([]job.Job, error) {
-			return RemoteOK()()
+			scraper := RemoteOK()
+			return scraper()
 		}},
 		{name: "Greenhouse", fn: func(ctx context.Context, keywords []string, location string) ([]job.Job, error) {
-			return Greenhouse(DefaultGreenhouseBoards)()
+			scraper := Greenhouse(DefaultGreenhouseBoards)
+			return scraper()
 		}},
 		{name: "We Work Remotely", fn: func(ctx context.Context, keywords []string, location string) ([]job.Job, error) {
-			return WeWorkRemotely()()
+			scraper := WeWorkRemotely()
+			return scraper()
 		}},
 		{name: "Arbeitnow", fn: func(ctx context.Context, keywords []string, location string) ([]job.Job, error) {
-			return Arbeitnow()()
+			scraper := Arbeitnow()
+			return scraper()
 		}},
 		{name: "Jobicy", fn: func(ctx context.Context, keywords []string, location string) ([]job.Job, error) {
-			return Jobicy()()
+			scraper := Jobicy()
+			return scraper()
 		}},
 		{name: "RSS Feeds", fn: func(ctx context.Context, keywords []string, location string) ([]job.Job, error) {
 			// RSS feeds need to be handled differently - return empty for now
