@@ -1,15 +1,24 @@
-Summarize this job posting in a structured format for automated matching.
+Summarize the following job posting for an automated job-matching engine. 
+Focus on extracting core responsibilities, essential technical requirements, and identifying potential "seniority" markers through specific achievements mentioned.
 
-Job posting:
+Job Posting:
 {{job_description}}
 
-Output a JSON object with these fields:
-- "title": the job title
-- "company": the company name
-- "required_skills": array of required technical skills
-- "optional_skills": array of nice-to-have skills
-- "experience_years": estimated years of experience required (integer, 0 if not specified)
-- "remote": boolean, true if remote work is available
-- "keywords": array of 5-10 key terms that characterize this role
+Output a valid JSON object with EXACTLY these fields:
+- "title": string (official job title)
+- "company": string (company name)
+- "location": string (remote, hybrid, or specific city/country)
+- "salary": string (extracted salary range or "Not specified")
+- "essential_skills": array of strings (top 5-8 mandatory technical skills)
+- "preferred_skills": array of strings (nice-to-have skills)
+- "experience_years": integer (estimated minimum years of experience, 0 if not specified)
+- "metrics_found": array of strings (any specific metrics or KPIs mentioned in the description, e.g. "managed 10 people", "scaled to 1M users")
+- "is_remote": boolean (true if remote is an option)
+- "top_keywords": array of strings (5-10 SEO-style keywords for this role)
 
-Output ONLY valid JSON, no markdown fences or explanations.
+Constraints:
+- Output ONLY valid JSON.
+- No markdown fences (no ```json).
+- No explanations.
+- If a field is missing in the text, use "Not specified" for strings or [] for arrays.
+- DO NOT invent or hallucinate information not present in the text.

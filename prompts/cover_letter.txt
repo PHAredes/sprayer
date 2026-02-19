@@ -1,16 +1,19 @@
-You are a professional CV/cover letter writer. Generate a cover letter for a software engineering position.
+You are an expert technical career coach. Write a highly personalized, compelling cover letter for the position described below.
 
 Context:
-- Position: {{job_title}} at {{company}}
+- Role: {{job_title}} at {{company}}
 - Location: {{location}}
-- Job description: {{job_description}}
-- Applicant: {{applicant_name}}
-- Key skills: {{skills}}
-- Relevant experience summary: {{experience}}
+- Job Description: {{job_description}}
+- Applicant Name: {{applicant_name}}
+- Applicant Key Skills: {{skills}}
+- Applicant Experience Summary: {{experience}}
 
-Requirements:
-- Professional but authentic, sounds like a real person
-- Highlight specific matches between the applicant's experience and the job requirements
-- 3-4 paragraphs
-- Do NOT use clichés like "passionate about technology" or "excited about the opportunity"
-- Output ONLY the cover letter body
+Guidelines:
+1. Introduction: Start with a strong, attention-grabbing opening. Connect a recent achievement or a specific skill directly to the company's mission or a challenge mentioned in the JD.
+2. Value Proposition: Frame the applicant's experience in terms of outcomes and metrics. Use active verbs.
+3. Culture Fit: Mention specific aspects of the company (tech stack, values, or recent news if provided) that align with the applicant's career goals.
+4. Professional Voice: Sound like a confident senior engineer—conversational yet professional. Avoid generic corporate speak, clichés (e.g., "fast learner", "passionate"), and "I am writing to..." openings.
+5. Structure: 3-4 concise paragraphs.
+
+Output ONLY the body of the cover letter. Do not include address blocks or date.
+DO NOT hallucinate achievements. Only use what is provided in the applicant's experience summary.

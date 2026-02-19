@@ -16,6 +16,8 @@ type Job struct {
 	JobType     string    `json:"job_type,omitempty"`
 	Email       string    `json:"email,omitempty"`
 	Score       int       `json:"score"`
+	HasTraps    bool      `json:"has_traps"`
+	Traps       []string  `json:"traps,omitempty"`
 	Applied     bool      `json:"applied"`
 	AppliedDate time.Time `json:"applied_date,omitempty"`
 }

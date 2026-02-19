@@ -54,6 +54,8 @@ func (c *CLI) Run() {
 		c.handleProfile()
 	case "setup":
 		c.handleSetup()
+	case "tui":
+		c.handleTUI()
 	default:
 		c.printUsage()
 	}
@@ -71,27 +73,28 @@ Commands:
   apply    Apply to a specific job (generates draft)
   list     List and filter jobs (pipeable)
   apply    Apply to a specific job (generates draft)
-  profile  Manage profiles
-  setup    Configure SMTP and LLM settings`)
+   profile  Manage profiles
+   setup    Configure SMTP and LLM settings
+   tui      Launch interactive terminal UI`)
 }
 
 func (c *CLI) handleScrape() {
 	fs := flag.NewFlagSet("scrape", flag.ExitOnError)
 	fast := fs.Bool("fast", false, "Skip browser-based scrapers (API only)")
 	force := fs.Bool("force", false, "Force scrape even if recently run")
-	
+
 	// Parse flags first
 	if len(os.Args) > 2 {
 		fs.Parse(os.Args[2:])
 	}
-	
+
 	keywords := fs.Args()
 	if len(keywords) == 0 {
 		keywords = []string{"golang", "rust", "remote"}
 	}
 
 	fmt.Printf("Scraping for: %v (fast=%v)\n", keywords, *fast)
-	
+
 	// Check history
 	cacheKey := fmt.Sprintf("%v-fast=%v", keywords, *fast)
 	lastRun, _ := c.store.GetLastScrape(cacheKey)
@@ -99,7 +102,7 @@ func (c *CLI) handleScrape() {
 		fmt.Printf("Skipping scrape (run %v ago). Use --force to override.\n", time.Since(lastRun).Round(time.Second))
 		return
 	}
-	
+
 	var s job.Scraper
 	if *fast {
 		s = scraper.APIOnly()
@@ -113,9 +116,13 @@ func (c *CLI) handleScrape() {
 		return
 	}
 
-	c.store.Save(jobs)
+	// Flag and sanitize before saving
+	pipeline := job.Pipe(job.FlagTraps(), job.SanitizeDescriptions())
+	processed := pipeline(jobs)
+
+	c.store.Save(processed)
 	c.store.SetLastScrape(cacheKey)
-	fmt.Printf("Saved %d jobs.\n", len(jobs))
+	fmt.Printf("Saved %d jobs.\n", len(processed))
 }
 
 func (c *CLI) handleList() {
@@ -125,20 +132,28 @@ func (c *CLI) handleList() {
 	fs.Parse(os.Args[2:])
 
 	jobs, _ := c.store.All()
-	
-	filters := []job.Filter{job.Dedup()}
+
+	filters := []job.Filter{
+		job.Dedup(),
+		job.FlagTraps(),
+		job.SanitizeDescriptions(),
+	}
 	if *keywords != "" {
 		filters = append(filters, job.ByKeywords(strings.Split(*keywords, ",")))
 	}
 	if *minScore > 0 {
 		filters = append(filters, job.ByMinScore(*minScore))
 	}
-	
+
 	pipeline := job.Pipe(filters...)
 	filtered := pipeline(jobs)
 
 	for _, j := range filtered {
-		fmt.Printf("[%d] %s @ %s (%s)\n", j.Score, j.Title, j.Company, j.ID)
+		trapIndicator := ""
+		if j.HasTraps {
+			trapIndicator = " [!] TRAPS FOUND"
+		}
+		fmt.Printf("[%d]%s %s @ %s (%s)\n", j.Score, trapIndicator, j.Title, j.Company, j.ID)
 	}
 }
 
@@ -161,10 +176,16 @@ func (c *CLI) handleApply() {
 	}
 
 	profiles, _ := c.profileStore.All()
-	p, _ := profile.BestProfile(*j, profiles, profile.DefaultScorer)
+	// Use first profile for now - can be enhanced later
+	var p profile.Profile
+	if len(profiles) > 0 {
+		p = profiles[0]
+	} else {
+		p = profile.NewDefaultProfile()
+	}
 
 	fmt.Printf("Generating application for %s using profile %s...\n", j.Company, p.Name)
-	
+
 	subject, body, err := apply.GenerateEmail(*j, p, c.llmClient, *prompt)
 	if err != nil {
 		fmt.Printf("Generation failed: %v\n", err)
@@ -178,7 +199,7 @@ func (c *CLI) handleApply() {
 	}
 
 	fmt.Printf("Draft created: %s\n", path)
-	
+
 	if *send {
 		fmt.Printf("Sending email via SMTP...\n")
 		// Assume CV is attached if path exists and ends with .pdf, but Draft only returns .eml path?
@@ -201,5 +222,15 @@ func (c *CLI) handleProfile() {
 	profiles, _ := c.profileStore.All()
 	for _, p := range profiles {
 		fmt.Printf("- %s (%s)\n", p.Name, p.ID)
+	}
+}
+
+func (c *CLI) handleTUI() {
+	fmt.Println("Starting enhanced TUI...")
+
+	// Initialize the new TUI
+	if err := InitializeTUI(); err != nil {
+		fmt.Printf("Error running TUI: %v\n", err)
+		return
 	}
 }

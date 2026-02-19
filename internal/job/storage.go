@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"time"
 
@@ -47,6 +48,8 @@ func migrate(db *sql.DB) error {
 			job_type    TEXT,
 			email       TEXT,
 			score       INTEGER,
+			has_traps   BOOLEAN DEFAULT 0,
+			traps       TEXT,
 			applied     BOOLEAN DEFAULT 0,
 			applied_date DATETIME,
 			created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -72,17 +75,18 @@ func (s *Store) Save(jobs []Job) error {
 
 	stmt, err := tx.Prepare(`
 		INSERT OR REPLACE INTO jobs
-		(id, title, company, location, description, url, source, posted_date, salary, job_type, email, score, applied, applied_date)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+		(id, title, company, location, description, url, source, posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, j := range jobs {
+		traps := strings.Join(j.Traps, ",")
 		_, err := stmt.Exec(j.ID, j.Title, j.Company, j.Location, j.Description,
 			j.URL, j.Source, j.PostedDate, j.Salary, j.JobType, j.Email,
-			j.Score, j.Applied, j.AppliedDate)
+			j.Score, j.HasTraps, traps, j.Applied, j.AppliedDate)
 		if err != nil {
 			return err
 		}
@@ -95,7 +99,7 @@ func (s *Store) Save(jobs []Job) error {
 func (s *Store) All() ([]Job, error) {
 	rows, err := s.DB.Query(`
 		SELECT id, title, company, location, description, url, source,
-		       posted_date, salary, job_type, email, score, applied, applied_date
+		       posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date
 		FROM jobs ORDER BY score DESC`)
 	if err != nil {
 		return nil, err
@@ -109,15 +113,19 @@ func (s *Store) All() ([]Job, error) {
 func (s *Store) ByID(id string) (*Job, error) {
 	row := s.DB.QueryRow(`
 		SELECT id, title, company, location, description, url, source,
-		       posted_date, salary, job_type, email, score, applied, applied_date
+		       posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date
 		FROM jobs WHERE id = ?`, id)
 
 	var j Job
+	var trapsStr string
 	err := row.Scan(&j.ID, &j.Title, &j.Company, &j.Location, &j.Description,
 		&j.URL, &j.Source, &j.PostedDate, &j.Salary, &j.JobType, &j.Email,
-		&j.Score, &j.Applied, &j.AppliedDate)
+		&j.Score, &j.HasTraps, &trapsStr, &j.Applied, &j.AppliedDate)
 	if err != nil {
 		return nil, err
+	}
+	if trapsStr != "" {
+		j.Traps = strings.Split(trapsStr, ",")
 	}
 	return &j, nil
 }
@@ -126,11 +134,15 @@ func scanJobs(rows *sql.Rows) ([]Job, error) {
 	var jobs []Job
 	for rows.Next() {
 		var j Job
+		var trapsStr string
 		err := rows.Scan(&j.ID, &j.Title, &j.Company, &j.Location, &j.Description,
 			&j.URL, &j.Source, &j.PostedDate, &j.Salary, &j.JobType, &j.Email,
-			&j.Score, &j.Applied, &j.AppliedDate)
+			&j.Score, &j.HasTraps, &trapsStr, &j.Applied, &j.AppliedDate)
 		if err != nil {
 			return nil, err
+		}
+		if trapsStr != "" {
+			j.Traps = strings.Split(trapsStr, ",")
 		}
 		jobs = append(jobs, j)
 	}

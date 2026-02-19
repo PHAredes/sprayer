@@ -1,0 +1,70 @@
+{
+package parse
+}
+
+EmailEntry <- Email
+SalaryEntry <- Salary
+LocationEntry <- Location
+URLEntry <- URL
+TrapEntry <- Trap
+
+Email <- User "@" Domain {
+    return string(c.text), nil
+}
+
+User <- [a-zA-Z0-9._%+-]+
+Domain <- [a-zA-Z0-9.-]+ "." TLD
+TLD <- [a-zA-Z] [a-zA-Z] [a-zA-Z]? [a-zA-Z]? [a-zA-Z]? [a-zA-Z]?
+
+Salary <- (SalaryPart (Spacing? ("-" / "to"i) Spacing? SalaryPart)? (Spacing? Frequency)?) {
+    return string(c.text), nil
+}
+
+SalaryPart <- (Currency Spacing?)? Amount [kK]? (Spacing? Currency)?
+
+Currency <- "$" / "€" / "£" / "¥" / "₹" / "₽" / "฿" / "₩" / "₫" / "₪" /
+            "USD" / "EUR" / "GBP" / "JPY" / "AUD" / "CAD" / "CHF" / "CNY" / 
+            "SEK" / "NZD" / "INR" / "BRL" / "RUB" / "ZAR" / "MXN" / "SGD" / 
+            "HKD" / "NOK" / "KRW" / "TRY" / "AED" / "SAR" / "IRR" / "IDR" / 
+            "MYR" / "PHP" / "VND" / "ILS" / "PLN" / "CZK" / "HUF" / "RON" / "THB"
+
+Amount <- [0-9,]+ ( "." [0-9]+ )?
+Frequency <- ("per"i / "/")? Spacing? ("year"i / "yr"i / "annually"i / "pa"i / "p.a."i / "month"i / "mo"i / "hour"i / "hr"i / "day"i)
+Spacing <- [ \t\n\r]+
+
+Location <- (Remote / OnSite / Hybrid / CityState) {
+    return string(c.text), nil
+}
+
+Remote <- "remote"i
+OnSite <- "on-site"i / "onsite"i
+Hybrid <- "hybrid"i
+CityState <- [A-Z][a-z]+ (Spacing [A-Z][a-z]+)* "," Spacing? [A-Z][A-Z]+
+
+URL <- Scheme "://" Host Path? {
+    return string(c.text), nil
+}
+
+Scheme <- "http" "s"?
+Host <- [^ \t\n\r<>/":]+ (":" Port)?
+Port <- [0-9]+
+Path <- "/" [^ \t\n\r<>"]*
+
+Trap <- (Jailbreak / Instruction / Codeword / Math) {
+    return string(c.text), nil
+}
+
+Jailbreak <- "ignore all previous instructions"i / "ignore previous instructions"i / 
+             "disregard all previous"i / "forget your previous"i / "bypass"i / 
+             "system prompt"i / "you are now"i / "act as"i
+
+Instruction <- "write a cover letter about"i / "start your cover letter with"i / 
+               "include the word"i / "mention this word"i / "mention the word"i /
+               "no ai"i / "no llm"i / "no chatgpt"i / "human only"i / "not a bot"i /
+               "word count"i / "how many times does the letter"i / "recipe for"i /
+               "summarize this as"i / "translate to"i
+
+Codeword <- "brown m&m"i / "blue m&m"i / "banana"i / "pineapple"i / "purple elephant"i /
+            "codeword"i / "secret word"i
+
+Math <- "solve this math"i / "add the result of"i / "calculate"i / "add the sha256"i

@@ -16,3 +16,6 @@ outputs/
 # editor
 .vscode/
 .idea/
+.gemini/
+gha-creds-*.json
+.aider*

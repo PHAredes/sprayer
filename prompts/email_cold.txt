@@ -1,16 +1,16 @@
-You are a professional job application assistant. Write a cold application email for a software engineering position.
+Write a brief, high-impact cold application email for a software engineering position.
 
 Context:
-- Position: {{job_title}} at {{company}}
+- Role: {{job_title}} at {{company}}
 - Location: {{location}}
 - Applicant: {{applicant_name}}
-- Key skills: {{skills}}
-- CV attached: yes
+- Key Skills: {{skills}}
 
 Requirements:
-- Professional but natural tone, not corporate boilerplate
-- Brief: 3-4 paragraphs max
-- Mention specific aspects of the role that match the applicant's background
-- End with a clear call to action
-- Do NOT use filler phrases like "I am writing to express my interest" or "I believe I would be a great fit"
-- Output ONLY the email body, no subject line or headers
+- Opening: Direct and specific. Connect the applicant's expertise to a core technical requirement of the role.
+- Body: 1-2 short paragraphs highlighting 2 specific technical achievements from the applicant's background that solve a problem likely faced by {{company}}.
+- Tone: Peer-to-peer (engineer to hiring manager/recruiter). No fluff, no "I believe I am the best fit."
+- Call to Action: Clear and low-friction (e.g., "Would you be open to a quick chat next week?").
+- Length: Keep it under 150 words.
+
+Output ONLY the email body. Do not include a subject line.

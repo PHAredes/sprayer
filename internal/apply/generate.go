@@ -34,7 +34,7 @@ func GenerateEmail(j job.Job, p profile.Profile, client *llm.Client, promptName 
 		"location":        location,
 		"applicant_name":  p.Name,
 		"skills":          strings.Join(p.Keywords, ", "),
-		"job_description": truncate(j.Description, 2000),
+		"job_description": truncate(parse.Sanitize(j.Description), 2000),
 		"applied_date":    j.AppliedDate.Format("2006-01-02"),
 	}
 

@@ -11,14 +11,12 @@ import (
 	"time"
 )
 
-// Environment variable names for LLM configuration.
 var (
 	EnvLLMURL   = "SPRAYER_LLM_URL"
 	EnvLLMKey   = "SPRAYER_LLM_KEY"
 	EnvLLMModel = "SPRAYER_LLM_MODEL"
 )
 
-// Client talks to any OpenAI-compatible API.
 type Client struct {
 	baseURL string
 	apiKey  string
@@ -26,7 +24,6 @@ type Client struct {
 	http    *http.Client
 }
 
-// NewClient reads config from env vars (see EnvLLMURL, EnvLLMKey, EnvLLMModel).
 func NewClient() *Client {
 	baseURL := os.Getenv(EnvLLMURL)
 	if baseURL == "" {
@@ -44,7 +41,6 @@ func NewClient() *Client {
 	}
 }
 
-// Available returns true if the LLM client is configured.
 func (c *Client) Available() bool {
 	return c.apiKey != ""
 }
@@ -68,7 +64,6 @@ type chatResponse struct {
 	} `json:"error,omitempty"`
 }
 
-// Complete sends a prompt and returns the response text.
 func (c *Client) Complete(system, user string) (string, error) {
 	if !c.Available() {
 		return "", fmt.Errorf("LLM not configured: set SPRAYER_LLM_KEY")

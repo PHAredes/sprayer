@@ -1,44 +1,18 @@
 package parse
 
-import (
-	"strings"
-)
+import "strings"
 
-// Traps contains phrases often used to filter out AI/bot applications.
-var Traps = []string{
-	"ignore all previous instructions",
-	"ignore previous instructions",
-	"write a cover letter about",
-	"start your cover letter with",
-	"include the word",
-	"no ai",
-	"no llm",
-	"no chatgpt",
-	"human only",
-	"not a bot",
-	"solve this math",
-	"brown m&m",
-	"blue m&m",
-	"banana", // sometimes used as a codeword
-	"mention this word",
-	"add the sha256",
-	"add the result of",
-	"word count",
-	"how many times does the letter",
-	"recipe for",
+func CheckForTraps(text string) []string {
+	return findAll("TrapEntry", text)
 }
 
-// CheckForTraps scans the text for anti-AI phrases or instructions.
-// Returns a list of potential traps found.
-func CheckForTraps(text string) []string {
-	text = strings.ToLower(text)
-	var found []string
-	
-	for _, trap := range Traps {
-		if strings.Contains(text, trap) {
-			found = append(found, trap)
-		}
+func Sanitize(text string) string {
+	traps := CheckForTraps(text)
+	for _, trap := range traps {
+		// Use a case-insensitive replacement if possible, 
+		// but since we have the exact match from findAll, we can just replace it.
+		// Note: findAll returns exactly what was matched.
+		text = strings.ReplaceAll(text, trap, "[FLAGGED CONTENT REMOVED]")
 	}
-	
-	return found
+	return text
 }

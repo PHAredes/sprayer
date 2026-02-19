@@ -24,6 +24,22 @@ type KeyMap struct {
 	ClearFilter key.Binding
 }
 
+// ShortHelp returns keybindings to be shown in the mini help view.
+func (k KeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Help, k.Quit}
+}
+
+// FullHelp returns all keybindings for the expanded help view.
+func (k KeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Up, k.Down, k.Left, k.Right},
+		{k.Enter, k.Esc, k.Tab, k.Back},
+		{k.Scrape, k.Filter, k.Profiles, k.Apply},
+		{k.Sort, k.ClearFilter, k.Send, k.Help},
+		{k.Quit},
+	}
+}
+
 var Keys = KeyMap{
 	Up: key.NewBinding(
 		key.WithKeys("up", "k"),

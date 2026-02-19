@@ -2,25 +2,20 @@ package parse
 
 import "strings"
 
-// ExtractEmails returns all email addresses found in text.
 func ExtractEmails(text string) []string {
-	return EmailPattern.FindAllString(text, -1)
+	return findAll("EmailEntry", text)
 }
 
-// ExtractFirstEmail returns the first email found, or empty string.
 func ExtractFirstEmail(text string) string {
-	match := EmailPattern.FindString(text)
-	return match
+	return findFirst("EmailEntry", text)
 }
 
-// ExtractSalary returns the first salary range found.
 func ExtractSalary(text string) string {
-	return SalaryPattern.FindString(text)
+	return findFirst("SalaryEntry", text)
 }
 
-// ExtractLocations returns all location mentions.
 func ExtractLocations(text string) []string {
-	matches := LocationPattern.FindAllString(text, -1)
+	matches := findAll("LocationEntry", text)
 	var unique []string
 	seen := make(map[string]bool)
 	for _, m := range matches {
@@ -34,13 +29,10 @@ func ExtractLocations(text string) []string {
 	return unique
 }
 
-// IsRemote checks if a job text indicates remote work.
 func IsRemote(text string) bool {
-	lower := strings.ToLower(text)
-	return strings.Contains(lower, "remote")
+	return exists("Remote", text)
 }
 
-// ExtractURLs returns all URLs found in text.
 func ExtractURLs(text string) []string {
-	return URLPattern.FindAllString(text, -1)
+	return findAll("URLEntry", text)
 }

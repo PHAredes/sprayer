@@ -1,8 +1,10 @@
 package job
 
-import "sort"
+import (
+	"sort"
+	"sprayer/internal/parse"
+)
 
-// Map applies f to each job.
 func Map(jobs []Job, f func(Job) Job) []Job {
 	out := make([]Job, len(jobs))
 	for i, j := range jobs {
@@ -11,7 +13,6 @@ func Map(jobs []Job, f func(Job) Job) []Job {
 	return out
 }
 
-// Select returns jobs where predicate is true.
 func Select(jobs []Job, pred func(Job) bool) []Job {
 	var out []Job
 	for _, j := range jobs {
@@ -22,7 +23,6 @@ func Select(jobs []Job, pred func(Job) bool) []Job {
 	return out
 }
 
-// SortBy returns a Filter that sorts using the given less function.
 func SortBy(less func(a, b Job) bool) Filter {
 	return func(jobs []Job) []Job {
 		sorted := make([]Job, len(jobs))
@@ -34,14 +34,34 @@ func SortBy(less func(a, b Job) bool) Filter {
 	}
 }
 
-// Common sort comparators.
 var (
 	ByScoreDesc = func(a, b Job) bool { return a.Score > b.Score }
 	ByDateDesc  = func(a, b Job) bool { return a.PostedDate.After(b.PostedDate) }
 	ByTitleAsc  = func(a, b Job) bool { return a.Title < b.Title }
 )
 
-// Dedup removes duplicate jobs by ID.
+func FlagTraps() Filter {
+	return func(jobs []Job) []Job {
+		return Map(jobs, func(j Job) Job {
+			traps := parse.CheckForTraps(j.Description)
+			if len(traps) > 0 {
+				j.HasTraps = true
+				j.Traps = traps
+			}
+			return j
+		})
+	}
+}
+
+func SanitizeDescriptions() Filter {
+	return func(jobs []Job) []Job {
+		return Map(jobs, func(j Job) Job {
+			j.Description = parse.Sanitize(j.Description)
+			return j
+		})
+	}
+}
+
 func Dedup() Filter {
 	return func(jobs []Job) []Job {
 		seen := make(map[string]bool, len(jobs))
