@@ -23,6 +23,11 @@ type IncrementalScraper struct {
 	mu            sync.RWMutex
 }
 
+// Done returns a channel that's closed when the scraper is done
+func (is *IncrementalScraper) Done() <-chan struct{} {
+	return is.ctx.Done()
+}
+
 // ScraperProgress represents scraping progress information
 type ScraperProgress struct {
 	Source        string

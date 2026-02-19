@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -26,10 +27,11 @@ type App struct {
 	profiles     []profile.Profile
 
 	// Components
-	header  *Header
-	footer  *Footer
-	jobList *SimpleJobList
-	scraper *ScraperView
+	header   *Header
+	footer   *Footer
+	jobList  *SimpleJobList
+	scraper  *ScraperView
+	helpView help.Model
 
 	// Dependencies
 	store        *job.Store
@@ -80,6 +82,7 @@ func NewApp() (*App, error) {
 	app.footer = &Footer{}
 	app.jobList = &SimpleJobList{jobs: jobs}
 	app.scraper = NewScraperView()
+	app.helpView = help.New()
 
 	return app, nil
 }
@@ -231,27 +234,42 @@ func (a *App) startScraping() (tea.Model, tea.Cmd) {
 
 func (a *App) monitorScraper(scraperInstance *scraper.IncrementalScraper) tea.Cmd {
 	return func() tea.Msg {
-		// Start monitoring in background
-		go func() {
-			for _ = range scraperInstance.Progress() {
-				// Send progress message through program
-				// This would need to be handled differently in bubbletea
+		// Use a ticker-based approach to monitor scraper progress
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				// Check for progress updates
+				select {
+				case progress, ok := <-scraperInstance.Progress():
+					if ok {
+						return AppScraperProgressMsg{Progress: progress}
+					}
+				default:
+				}
+
+				// Check for job results
+				select {
+				case job, ok := <-scraperInstance.Results():
+					if ok {
+						return AppScraperJobMsg{Job: job}
+					}
+				default:
+				}
+
+				// Check if scraper is done
+				select {
+				case <-scraperInstance.Done():
+					return AppScraperCompleteMsg{}
+				default:
+				}
+
+			case <-scraperInstance.Done():
+				return AppScraperCompleteMsg{}
 			}
-		}()
-
-		// Collect results
-		go func() {
-			for _ = range scraperInstance.Results() {
-				// Send job message through program
-			}
-		}()
-
-		// Wait for completion
-		go func() {
-			// Wait for scraper completion
-		}()
-
-		return nil
+		}
 	}
 }
 
@@ -309,7 +327,21 @@ func (a *App) renderHelp() string {
 		MarginBottom(1).
 		Render("Sprayer - Help")
 
-	content := fmt.Sprintf("%s\n\n%s", title, GlobalKeys.FullHelp())
+	// Use charm help component for better formatting
+	jobHelp := a.helpView.View(JobKeys)
+	globalHelp := a.helpView.View(GlobalKeys)
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		title,
+		"",
+		"Job List Keys:",
+		jobHelp,
+		"",
+		"Global Keys:",
+		globalHelp,
+	)
+
 	return helpStyle.Render(content)
 }
 
@@ -355,11 +387,14 @@ type keyMap struct {
 	Help key.Binding
 }
 
-func (k keyMap) FullHelp() string {
-	return fmt.Sprintf("Global Keys:\n  %s  %s\n  %s  %s",
-		k.Quit.Help().Key, k.Quit.Help().Desc,
-		k.Help.Help().Key, k.Help.Help().Desc,
-	)
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Quit, k.Help},
+	}
+}
+
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Help, k.Quit}
 }
 
 type jobKeyMap struct {
@@ -372,6 +407,13 @@ type jobKeyMap struct {
 
 func (k jobKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Scrape, k.Refresh, GlobalKeys.Help}
+}
+
+func (k jobKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Up, k.Down, k.Select},
+		{k.Scrape, k.Refresh},
+	}
 }
 
 // Message types for scraper communication
