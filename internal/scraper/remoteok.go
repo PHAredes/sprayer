@@ -31,6 +31,9 @@ func RemoteOK() job.Scraper {
 
 			var r remoteOKJob
 			if err := json.Unmarshal(entry, &r); err != nil {
+				// Debug: print the error and raw data
+				fmt.Printf("RemoteOK JSON parse error: %v\n", err)
+				fmt.Printf("Raw data: %s\n", string(entry)[:100])
 				continue
 			}
 
@@ -40,7 +43,7 @@ func RemoteOK() job.Scraper {
 				ID:          fmt.Sprintf("rok-%s", r.ID),
 				Title:       r.Position,
 				Company:     r.Company,
-				Location:    strings.Join(r.Location, ", "),
+				Location:    r.Location, // Direct assignment since it's now a string
 				Description: stripHTML(r.Description),
 				URL:         fmt.Sprintf("https://remoteok.com/remote-jobs/%s", r.Slug),
 				Source:      "remoteok",
@@ -62,7 +65,7 @@ type remoteOKJob struct {
 	Position    string   `json:"position"`
 	Company     string   `json:"company"`
 	Description string   `json:"description"`
-	Location    []string `json:"location"`
+	Location    string   `json:"location"` // Changed from []string to string
 	Tags        []string `json:"tags"`
 	SalaryMin   int      `json:"salary_min"`
 	SalaryMax   int      `json:"salary_max"`

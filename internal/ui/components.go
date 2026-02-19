@@ -65,7 +65,13 @@ func (f *Footer) View(mode AppMode) string {
 	var keybinds string
 	switch mode {
 	case ModeJobs:
-		keybinds = "s: scrape | r: refresh | ↑↓: navigate | enter: select | ?: help | q: quit"
+		keybinds = "s: scrape | f: filter | p: profiles | ↑↓: navigate | enter: select | a: apply | ?: help | q: quit"
+	case ModeJobDetail:
+		keybinds = "esc: back | a: apply | ?: help | q: quit"
+	case ModeFilters:
+		keybinds = "tab: next field | enter: apply | esc: cancel | ?: help | q: quit"
+	case ModeProfiles:
+		keybinds = "↑↓: select | enter: choose | n: new | esc: back | ?: help | q: quit"
 	case ModeScraping:
 		keybinds = "esc: cancel | ?: help | q: quit"
 	case ModeHelp:

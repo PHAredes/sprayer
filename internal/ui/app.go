@@ -27,11 +27,14 @@ type App struct {
 	profiles     []profile.Profile
 
 	// Components
-	header   *Header
-	footer   *Footer
-	jobList  *SimpleJobList
-	scraper  *ScraperView
-	helpView help.Model
+	header      *Header
+	footer      *Footer
+	jobList     *SimpleJobList
+	jobDetail   *JobDetail
+	filterView  *FilterView
+	profileView *ProfileView
+	scraper     *ScraperView
+	helpView    help.Model
 
 	// Dependencies
 	store        *job.Store
@@ -71,6 +74,15 @@ func NewApp() (*App, error) {
 	jobs, _ := jobStore.All()
 	profiles, _ := profileStore.All()
 
+	// Create default profile if none exists
+	activeProfile := profile.NewDefaultProfile()
+	if len(profiles) > 0 {
+		activeProfile = profiles[0]
+	} else {
+		profileStore.Save(activeProfile)
+		profiles = append(profiles, activeProfile)
+	}
+
 	app := &App{
 		state:        ModeJobs,
 		jobs:         jobs,
@@ -84,6 +96,9 @@ func NewApp() (*App, error) {
 	app.header = &Header{}
 	app.footer = &Footer{}
 	app.jobList = &SimpleJobList{jobs: jobs}
+	app.jobDetail = NewJobDetail()
+	app.filterView = NewFilterView(activeProfile)
+	app.profileView = NewProfileView(profiles, activeProfile)
 	app.scraper = NewScraperView()
 	app.helpView = help.New()
 
@@ -130,6 +145,12 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch a.state {
 		case ModeJobs:
 			return a.updateJobs(msg)
+		case ModeJobDetail:
+			return a.updateJobDetail(msg)
+		case ModeFilters:
+			return a.updateFilters(msg)
+		case ModeProfiles:
+			return a.updateProfiles(msg)
 		case ModeScraping:
 			return a.updateScraping(msg)
 		case ModeHelp:
@@ -149,16 +170,32 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, tea.Batch(cmds...)
 
 	case AppScraperJobMsg:
-		// Add job to list incrementally
+		// Add job to list incrementally and save to database
 		a.jobs = append(a.jobs, msg.Job)
 		a.filteredJobs = a.jobs
 		a.jobList.SetJobs(a.jobs)
+
+		// Save the individual job to database
+		if err := a.store.Save([]job.Job{msg.Job}); err != nil {
+			// Log error but don't stop the process
+			fmt.Printf("Error saving job: %v\n", err)
+		}
+
 		return a, nil
 
 	case AppScraperCompleteMsg:
+		// Save all jobs and complete scraping
 		a.state = ModeJobs
 		a.currentScraper = nil
 		a.scraperCancel = nil
+
+		// Save all jobs to database and set last scrape time
+		if err := a.store.Save(a.jobs); err != nil {
+			fmt.Printf("Error saving jobs: %v\n", err)
+		} else {
+			fmt.Printf("Saved %d jobs from scraping\n", len(a.jobs))
+		}
+
 		return a, nil
 
 	case AppScraperErrorMsg:
@@ -191,11 +228,98 @@ func (a *App) updateJobs(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		a.filteredJobs = jobs
 		a.jobList.SetJobs(jobs)
 		return a, nil
+	case key.Matches(msg, JobKeys.Filter):
+		a.state = ModeFilters
+		return a, nil
+	case key.Matches(msg, JobKeys.Profiles):
+		a.state = ModeProfiles
+		return a, nil
+	case key.Matches(msg, JobKeys.Select):
+		// Select job and show detail
+		selectedJob := a.jobList.SelectedJob()
+		if selectedJob != nil && a.jobDetail != nil {
+			a.jobDetail.SetJob(selectedJob)
+			a.state = ModeJobDetail
+		}
+		return a, nil
+	case key.Matches(msg, JobKeys.Apply):
+		// Apply to selected job
+		selectedJob := a.jobList.SelectedJob()
+		if selectedJob != nil {
+			fmt.Printf("Applying to job: %s @ %s\n", selectedJob.Title, selectedJob.Company)
+			// TODO: Implement actual application logic
+		}
+		return a, nil
 	}
 
 	// Pass to job list component
 	cmd := a.jobList.Update(msg)
 	return a, cmd
+}
+
+func (a *App) updateJobDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "q", "esc":
+		a.state = ModeJobs
+		return a, nil
+	case "a":
+		// Apply to job
+		if a.jobList.SelectedJob() != nil {
+			fmt.Println("Applying to job...") // TODO: Implement application
+		}
+	}
+
+	// Update job detail component
+	if a.jobDetail != nil {
+		cmd := a.jobDetail.Update(msg)
+		return a, cmd
+	}
+
+	return a, nil
+}
+
+func (a *App) updateFilters(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "q", "esc":
+		a.state = ModeJobs
+		return a, nil
+	case "enter":
+		// Apply filters
+		a.state = ModeJobs
+		return a, nil
+	}
+
+	// Update filter view
+	if a.filterView != nil {
+		cmd := a.filterView.Update(msg)
+		return a, cmd
+	}
+
+	return a, nil
+}
+
+func (a *App) updateProfiles(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "q", "esc":
+		a.state = ModeJobs
+		return a, nil
+	case "enter":
+		// Select profile
+		a.state = ModeJobs
+		return a, nil
+	case "n":
+		// New profile
+		fmt.Println("Creating new profile...") // TODO: Implement profile creation
+		return a, nil
+	}
+
+	// Update profile view
+	if a.profileView != nil {
+		cmd := a.profileView.Update(msg)
+		return a, cmd
+	}
+
+	return a, nil
 }
 
 func (a *App) updateScraping(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -301,6 +425,24 @@ func (a *App) View() string {
 	switch a.state {
 	case ModeJobs:
 		content = a.jobList.View()
+	case ModeJobDetail:
+		if a.jobDetail != nil {
+			content = a.jobDetail.View(a.width, a.height-2) // Account for header/footer
+		} else {
+			content = "No job selected"
+		}
+	case ModeFilters:
+		if a.filterView != nil {
+			content = a.filterView.View(a.width, a.height-2) // Account for header/footer
+		} else {
+			content = "Filter view not available"
+		}
+	case ModeProfiles:
+		if a.profileView != nil {
+			content = a.profileView.View(a.width, a.height-2) // Account for header/footer
+		} else {
+			content = "Profile view not available"
+		}
 	case ModeScraping:
 		content = a.scraper.View()
 	case ModeHelp:
@@ -370,6 +512,18 @@ var (
 			key.WithKeys("r"),
 			key.WithHelp("r", "refresh"),
 		),
+		Filter: key.NewBinding(
+			key.WithKeys("f"),
+			key.WithHelp("f", "filter"),
+		),
+		Profiles: key.NewBinding(
+			key.WithKeys("p"),
+			key.WithHelp("p", "profiles"),
+		),
+		Select: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "select job"),
+		),
 		Up: key.NewBinding(
 			key.WithKeys("up", "k"),
 			key.WithHelp("↑/k", "up"),
@@ -378,9 +532,9 @@ var (
 			key.WithKeys("down", "j"),
 			key.WithHelp("↓/j", "down"),
 		),
-		Select: key.NewBinding(
-			key.WithKeys("enter"),
-			key.WithHelp("enter", "select"),
+		Apply: key.NewBinding(
+			key.WithKeys("a"),
+			key.WithHelp("a", "apply to job"),
 		),
 	}
 )
@@ -401,11 +555,14 @@ func (k keyMap) ShortHelp() []key.Binding {
 }
 
 type jobKeyMap struct {
-	Scrape  key.Binding
-	Refresh key.Binding
-	Up      key.Binding
-	Down    key.Binding
-	Select  key.Binding
+	Scrape   key.Binding
+	Refresh  key.Binding
+	Filter   key.Binding
+	Profiles key.Binding
+	Up       key.Binding
+	Down     key.Binding
+	Select   key.Binding
+	Apply    key.Binding
 }
 
 func (k jobKeyMap) ShortHelp() []key.Binding {
