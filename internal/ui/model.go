@@ -34,7 +34,7 @@ type Model struct {
 	activeProfile profile.Profile
 
 	// Components
-	jobList     *JobList
+	jobList     *SimpleJobList
 	jobDetail   *JobDetail
 	profileView *ProfileView
 	filterView  *FilterView
@@ -127,7 +127,7 @@ func NewModel() (Model, error) {
 	}
 
 	// Initialize components
-	m.jobList = NewJobList(m.filteredJobs)
+	m.jobList = &SimpleJobList{jobs: m.filteredJobs}
 	m.jobDetail = NewJobDetail()
 	m.profileView = NewProfileView(profiles, activeProfile)
 	m.filterView = NewFilterView(activeProfile)
@@ -294,7 +294,7 @@ func (m *Model) renderLoading() string {
 
 func (m *Model) renderListView() string {
 	header := m.renderHeader()
-	list := m.jobList.View(m.width, m.height-3) // Account for header and status bar
+	list := m.jobList.View()
 
 	if m.showHelp {
 		help := m.renderHelpOverlay()

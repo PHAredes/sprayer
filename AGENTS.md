@@ -3,12 +3,16 @@
 ## Build Commands
 
 ```bash
-# Build the main application
-go build -o sprayer .
+# Build the unified application (supports both CLI and TUI modes)
+go build -o sprayer ./cmd/sprayer
 
-# Build with specific entry points
-go build -o sprayer-cli cmd/cli/main.go
-go build -o sprayer-tui cmd/tui/main.go
+# Run in CLI mode (default)
+./sprayer
+
+# Run in TUI mode
+./sprayer tui
+
+# Build with specific entry points (legacy - use unified build above)
 go build -o sprayer-server cmd/server/main.go
 ```
 
@@ -125,15 +129,13 @@ type Job struct {
 ```
 sprayer/
 ├── cmd/           # Application entry points
-│   ├── cli/       # CLI version
-│   ├── tui/       # TUI version
-│   └── server/    # HTTP server version
+│   └── sprayer/   # Unified CLI/TUI application
 ├── internal/      # Private application code
 │   ├── api/       # HTTP API handlers
 │   ├── job/       # Job processing logic
 │   ├── parse/     # Content parsing
 │   ├── profile/   # User profiles
-│   └── ui/        # User interface components
+│   └── ui/        # User interface components (CLI + TUI)
 └── tests/e2e/     # End-to-end tests
 ```
 
