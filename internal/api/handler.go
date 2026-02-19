@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"sprayer/internal/job"
@@ -29,7 +30,7 @@ func (h *Handler) ListJobs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Optional filtering query params could be added here
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(jobs)
@@ -41,10 +42,10 @@ func (h *Handler) ScrapeJobs(w http.ResponseWriter, r *http.Request) {
 	if len(keywords) == 0 {
 		keywords = []string{"golang", "remote"}
 	}
-	
+
 	// API only mode for speed via query param?
 	fast := r.URL.Query().Get("fast") == "true"
-	
+
 	var s job.Scraper
 	if fast {
 		s = scraper.APIOnly()
@@ -54,8 +55,12 @@ func (h *Handler) ScrapeJobs(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		jobs, err := s()
-		if err == nil {
-			h.store.Save(jobs)
+		if err != nil {
+			log.Printf("scrape error: %v", err)
+			return
+		}
+		if err := h.store.Save(jobs); err != nil {
+			log.Printf("save jobs error: %v", err)
 		}
 	}()
 

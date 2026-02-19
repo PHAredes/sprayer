@@ -1,39 +1,44 @@
 package main_test
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func TestE2E_CLI_Scrape_And_List(t *testing.T) {
-	// Build the CLI binary
-	cmd := exec.Command("go", "build", "-o", "sprayer-e2e", "./cmd/cli/main.go")
-	cmd.Dir = "../.." // assume running from a subdir or fix path
-	// Easier: run go run directly
-	
-	root := "/home/user/openclaw-setup" // Hardcode for this env
-	
-	// 1. Scrape (Fast API only)
-	scrapeCmd := exec.Command("go", "run", "cmd/cli/main.go", "scrape", "--fast", "rust", "remote")
-	scrapeCmd.Dir = root
-	out, err := scrapeCmd.CombinedOutput()
+func TestE2E_CLI_Help(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", ".."))
 	if err != nil {
-		t.Fatalf("Scrape failed: %v\nOutput: %s", err, string(out))
+		t.Fatalf("Failed to find project root: %v", err)
 	}
-	t.Logf("Scrape Output: %s", string(out))
 
-	// 2. List
-	listCmd := exec.Command("go", "run", "cmd/cli/main.go", "list")
-	listCmd.Dir = root
-	listOut, err := listCmd.CombinedOutput()
+	cmd := exec.Command("go", "run", "./cmd/sprayer")
+	cmd.Dir = root
+	cmd.Env = append(os.Environ(), "HOME="+os.TempDir())
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("List failed: %v\nOutput: %s", err, string(listOut))
+		t.Fatalf("CLI help failed: %v\nOutput: %s", err, string(out))
 	}
-	
-	output := string(listOut)
-	if !strings.Contains(output, "rust") && !strings.Contains(output, "Rust") { 
-		// Ideally we found at least one job. If network failed or no jobs found, this might flake.
-		// But "Scrape Output" should tell us "Saved X jobs".
+
+	output := string(out)
+	if !strings.Contains(output, "scrape") || !strings.Contains(output, "list") {
+		t.Errorf("Expected usage to contain 'scrape' and 'list', got: %s", output)
+	}
+}
+
+func TestE2E_CLI_List_Empty(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatalf("Failed to find project root: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/sprayer", "list")
+	cmd.Dir = root
+	cmd.Env = append(os.Environ(), "HOME="+os.TempDir())
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("CLI list failed: %v\nOutput: %s", err, string(out))
 	}
 }

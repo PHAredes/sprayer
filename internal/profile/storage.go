@@ -3,6 +3,7 @@ package profile
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
@@ -66,8 +67,12 @@ func (s *Store) All() ([]Profile, error) {
 		if err != nil {
 			return nil, err
 		}
-		json.Unmarshal([]byte(kwJSON), &p.Keywords)
-		json.Unmarshal([]byte(locsJSON), &p.Locations)
+		if err := json.Unmarshal([]byte(kwJSON), &p.Keywords); err != nil {
+			return nil, fmt.Errorf("unmarshal keywords: %w", err)
+		}
+		if err := json.Unmarshal([]byte(locsJSON), &p.Locations); err != nil {
+			return nil, fmt.Errorf("unmarshal locations: %w", err)
+		}
 		profiles = append(profiles, p)
 	}
 	return profiles, nil
@@ -86,8 +91,12 @@ func (s *Store) ByID(id string) (*Profile, error) {
 	if err != nil {
 		return nil, err
 	}
-	json.Unmarshal([]byte(kwJSON), &p.Keywords)
-	json.Unmarshal([]byte(locsJSON), &p.Locations)
+	if err := json.Unmarshal([]byte(kwJSON), &p.Keywords); err != nil {
+		return nil, fmt.Errorf("unmarshal keywords: %w", err)
+	}
+	if err := json.Unmarshal([]byte(locsJSON), &p.Locations); err != nil {
+		return nil, fmt.Errorf("unmarshal locations: %w", err)
+	}
 	return &p, nil
 }
 

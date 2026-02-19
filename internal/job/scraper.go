@@ -11,7 +11,7 @@ func Merge(scrapers ...Scraper) Scraper {
 			err  error
 		}
 		ch := make(chan result, len(scrapers))
-		
+
 		for _, s := range scrapers {
 			go func(s Scraper) {
 				jobs, err := s()
@@ -30,7 +30,7 @@ func Merge(scrapers ...Scraper) Scraper {
 			}
 			all = append(all, res.jobs...)
 		}
-		
+
 		return all, lastErr
 	}
 }

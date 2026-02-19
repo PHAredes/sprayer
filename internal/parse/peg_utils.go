@@ -35,5 +35,5 @@ func exists(rule string, text string) bool {
 }
 
 func (c *current) textSlice() string {
-    return string(c.text)
+	return string(c.text)
 }

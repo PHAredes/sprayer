@@ -7,11 +7,11 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/huh v0.5.2
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-rod/rod v0.116.2
 	github.com/joho/godotenv v1.5.1
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/mattn/go-sqlite3 v1.14.34
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -47,5 +47,4 @@ require (
 	github.com/ysmood/leakless v0.9.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

@@ -80,7 +80,8 @@ Commands:
 
 func (c *CLI) handleScrape() {
 	fs := flag.NewFlagSet("scrape", flag.ExitOnError)
-	fast := fs.Bool("fast", false, "Skip browser-based scrapers (API only)")
+	fast := fs.Bool("fast", false, "Use only reliable API scrapers (recommended)")
+	all := fs.Bool("all", false, "Use all API scrapers (may have issues)")
 	force := fs.Bool("force", false, "Force scrape even if recently run")
 
 	// Parse flags first
@@ -104,10 +105,12 @@ func (c *CLI) handleScrape() {
 	}
 
 	var s job.Scraper
-	if *fast {
-		s = scraper.APIOnly()
+	if *all {
+		s = scraper.APIOnly() // All API scrapers
+	} else if *fast {
+		s = scraper.APIOnlyReliable() // Only reliable API scrapers
 	} else {
-		s = scraper.All(keywords, "Remote")
+		s = scraper.All(keywords, "Remote") // Full scraping with browser
 	}
 
 	jobs, err := s()

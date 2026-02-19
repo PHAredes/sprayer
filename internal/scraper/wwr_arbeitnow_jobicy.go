@@ -139,17 +139,17 @@ func Jobicy() job.Scraper {
 
 		var result struct {
 			Jobs []struct {
-				ID          int    `json:"id"`
-				URL         string `json:"url"`
-				JobTitle    string `json:"jobTitle"`
-				CompanyName string `json:"companyName"`
-				JobGeo      string `json:"jobGeo"`
-				JobType     string `json:"jobType"`
-				AnnSalaryMin string `json:"annualSalaryMin"`
-				AnnSalaryMax string `json:"annualSalaryMax"`
+				ID             int    `json:"id"`
+				URL            string `json:"url"`
+				JobTitle       string `json:"jobTitle"`
+				CompanyName    string `json:"companyName"`
+				JobGeo         string `json:"jobGeo"`
+				JobType        string `json:"jobType"`
+				AnnSalaryMin   string `json:"annualSalaryMin"`
+				AnnSalaryMax   string `json:"annualSalaryMax"`
 				SalaryCurrency string `json:"salaryCurrency"`
-				PubDate     string `json:"pubDate"`
-				JobExcerpt  string `json:"jobExcerpt"`
+				PubDate        string `json:"pubDate"`
+				JobExcerpt     string `json:"jobExcerpt"`
 			} `json:"jobs"`
 		}
 		if err := json.Unmarshal(data, &result); err != nil {

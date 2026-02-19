@@ -131,10 +131,16 @@ func (is *IncrementalScraper) runScraping() {
 		sourceName := source.name
 		is.sendProgress(sourceName, 0, len(sources), i+1, time.Since(startTime), "Scraping")
 
-		// Run scraper with timeout
-		ctx, cancel := context.WithTimeout(is.ctx, 30*time.Second)
+		// Run scraper with timeout and error handling
+		ctx, cancel := context.WithTimeout(is.ctx, 10*time.Second) // Reduced timeout
 		jobs, err := source.fn(ctx, keywords, location)
 		cancel()
+
+		if err != nil {
+			is.errors <- fmt.Errorf("error scraping %s: %w", sourceName, err)
+			is.sendProgress(sourceName, 0, len(sources), i+1, time.Since(startTime), "Error")
+			continue
+		}
 
 		if err != nil {
 			is.errors <- fmt.Errorf("error scraping %s: %w", sourceName, err)

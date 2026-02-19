@@ -20,7 +20,7 @@ func TestExtractEmails_Property(t *testing.T) {
 		}
 		email := user + "@" + domain + ".com"
 		text := "Some garbage " + email + " more garbage"
-		
+
 		emails := parse.ExtractEmails(text)
 		for _, e := range emails {
 			if e == email {

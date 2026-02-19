@@ -2,10 +2,10 @@ package job
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -19,7 +19,9 @@ type Store struct {
 // NewStore opens (or creates) the SQLite database.
 func NewStore() (*Store, error) {
 	dir := filepath.Join(os.Getenv("HOME"), ".sprayer")
-	os.MkdirAll(dir, 0755)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, fmt.Errorf("create data directory: %w", err)
+	}
 
 	db, err := sql.Open("sqlite3", filepath.Join(dir, "sprayer.db"))
 	if err != nil {

@@ -19,7 +19,9 @@ func Indeed(query, location string) job.Scraper {
 	)
 
 	return BrowserScrape(url, func(page *rod.Page) ([]job.Job, error) {
-		page.MustWaitStable()
+		if err := page.WaitStable(5 * time.Second); err != nil {
+			return nil, fmt.Errorf("Indeed: wait stable: %w", err)
+		}
 
 		elements, err := page.Elements(".job_seen_beacon, .jobsearch-ResultsList .result")
 		if err != nil {
@@ -88,7 +90,9 @@ func Glassdoor(query string) job.Scraper {
 	)
 
 	return BrowserScrape(url, func(page *rod.Page) ([]job.Job, error) {
-		page.MustWaitStable()
+		if err := page.WaitStable(5 * time.Second); err != nil {
+			return nil, fmt.Errorf("Glassdoor: wait stable: %w", err)
+		}
 
 		elements, err := page.Elements("[data-test='jobListing'], .react-job-listing")
 		if err != nil {
@@ -127,14 +131,14 @@ func Glassdoor(query string) job.Scraper {
 			}
 
 			j := job.Job{
-				ID:       idFromContent("gd", titleText+companyText),
-				Title:    strings.TrimSpace(titleText),
-				Company:  strings.TrimSpace(companyText),
-				Location: strings.TrimSpace(locText),
-				URL:      href,
-				Source:   "glassdoor",
+				ID:         idFromContent("gd", titleText+companyText),
+				Title:      strings.TrimSpace(titleText),
+				Company:    strings.TrimSpace(companyText),
+				Location:   strings.TrimSpace(locText),
+				URL:        href,
+				Source:     "glassdoor",
 				PostedDate: time.Now(),
-				Score:    50,
+				Score:      50,
 			}
 			jobs = append(jobs, j)
 		}

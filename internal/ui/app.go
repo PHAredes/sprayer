@@ -206,8 +206,12 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if a.scraper != nil {
 			a.scraper.SetError(msg.Error)
 		}
-		// Also show error in status for better visibility
-		a.setStatus(fmt.Sprintf("Scraping error: %v", msg.Error))
+		// Show error in status for better visibility
+		errorMsg := msg.Error.Error()
+		if len(errorMsg) > 80 {
+			errorMsg = errorMsg[:77] + "..."
+		}
+		a.setStatus(fmt.Sprintf("⚠️  Scraping error: %s", errorMsg))
 		return a, nil
 
 	case FiltersAppliedMsg:

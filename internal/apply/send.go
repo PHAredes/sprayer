@@ -3,9 +3,9 @@ package apply
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/jordan-wright/email"
 	"net/smtp"
 	"os"
-	"github.com/jordan-wright/email"
 )
 
 // SendDirect sends an email immediately using SMTP configuration.
@@ -32,7 +32,7 @@ func SendDirect(to, subject, body, attachmentPath string) error {
 	e.To = []string{to}
 	e.Subject = subject
 	e.Text = []byte(body)
-	
+
 	// Basic HTML conversion (wrapping body in pre/div)
 	// In a real 'pop' like tool we would render markdown.
 	htmlBody := fmt.Sprintf("<html><body><pre style='font-family: sans-serif'>%s</pre></body></html>", body)

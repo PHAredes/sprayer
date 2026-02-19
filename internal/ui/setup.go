@@ -24,7 +24,7 @@ func (c *CLI) handleSetup() {
 			huh.NewNote().
 				Title("Sprayer Setup").
 				Description("Configure your email (SMTP) and LLM settings."),
-				
+
 			huh.NewInput().
 				Title("SMTP Host").
 				Value(&smtpHost).
@@ -39,7 +39,7 @@ func (c *CLI) handleSetup() {
 				Title("SMTP User").
 				Value(&smtpUser).
 				Placeholder("me@example.com"),
-			
+
 			huh.NewInput().
 				Title("SMTP Password").
 				Value(&smtpPass).
@@ -55,12 +55,12 @@ func (c *CLI) handleSetup() {
 				Title("LLM API Key").
 				Value(&llmKey).
 				EchoMode(huh.EchoModePassword),
-			
+
 			huh.NewInput().
 				Title("LLM Base URL").
 				Value(&llmURL).
 				Placeholder("https://api.openai.com/v1"),
-				
+
 			huh.NewInput().
 				Title("LLM Model").
 				Value(&llmModel).

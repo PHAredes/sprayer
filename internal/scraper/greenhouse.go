@@ -74,7 +74,7 @@ type greenhouseJob struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
 	Content     string    `json:"content"`
-	AbsoluteURL string   `json:"absolute_url"`
+	AbsoluteURL string    `json:"absolute_url"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Location    struct {
 		Name string `json:"name"`

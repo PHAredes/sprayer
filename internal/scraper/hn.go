@@ -52,9 +52,9 @@ func HN() job.Scraper {
 
 			var commentsResult struct {
 				Hits []struct {
-					ObjectID  string `json:"objectID"`
+					ObjectID    string `json:"objectID"`
 					CommentText string `json:"comment_text"`
-					CreatedAt string `json:"created_at"`
+					CreatedAt   string `json:"created_at"`
 				} `json:"hits"`
 				NbPages int `json:"nbPages"`
 			}
