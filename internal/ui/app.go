@@ -79,17 +79,24 @@ func NewApp() (*App, error) {
 	app.header = &Header{}
 	app.footer = &Footer{}
 	app.jobList = &SimpleJobList{jobs: jobs}
-	app.scraper = &ScraperView{}
+	app.scraper = NewScraperView()
 
 	return app, nil
 }
 
 // Init initializes the application
 func (a *App) Init() tea.Cmd {
-	return tea.Batch(
-		tea.EnterAltScreen,
-		tea.SetWindowTitle("Sprayer - Job Application Tool"),
-	)
+	var cmds []tea.Cmd
+
+	cmds = append(cmds, tea.EnterAltScreen)
+	cmds = append(cmds, tea.SetWindowTitle("Sprayer - Job Application Tool"))
+
+	// Initialize scraper view if in scraping mode
+	if a.state == ModeScraping && a.scraper != nil {
+		cmds = append(cmds, a.scraper.Init())
+	}
+
+	return tea.Batch(cmds...)
 }
 
 // Update handles messages and updates the application state
@@ -126,7 +133,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 
-	case ScraperProgressMsg:
+	case AppScraperProgressMsg:
 		if a.scraper != nil {
 			cmd := a.scraper.UpdateProgress(msg.Progress)
 			if cmd != nil {
@@ -135,20 +142,20 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return a, tea.Batch(cmds...)
 
-	case ScraperJobMsg:
+	case AppScraperJobMsg:
 		// Add job to list incrementally
 		a.jobs = append(a.jobs, msg.Job)
 		a.filteredJobs = a.jobs
 		a.jobList.SetJobs(a.jobs)
 		return a, nil
 
-	case ScraperCompleteMsg:
+	case AppScraperCompleteMsg:
 		a.state = ModeJobs
 		a.currentScraper = nil
 		a.scraperCancel = nil
 		return a, nil
 
-	case ScraperErrorMsg:
+	case AppScraperErrorMsg:
 		// Handle scraper errors
 		if a.scraper != nil {
 			a.scraper.SetError(msg.Error)
@@ -216,7 +223,10 @@ func (a *App) startScraping() (tea.Model, tea.Cmd) {
 	scraper.Start()
 
 	// Monitor progress and results
-	return a, a.monitorScraper(scraper)
+	return a, tea.Batch(
+		a.monitorScraper(scraper),
+		a.scraper.Init(),
+	)
 }
 
 func (a *App) monitorScraper(scraperInstance *scraper.IncrementalScraper) tea.Cmd {

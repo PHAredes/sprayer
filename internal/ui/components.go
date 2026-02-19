@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"sprayer/internal/job"
@@ -161,20 +163,57 @@ func (j *SimpleJobList) ToggleSort() {
 	}
 }
 
-// ScraperView represents the scraping progress view
+// ScraperView represents the scraping progress view with proper charm components
 type ScraperView struct {
-	width    int
-	height   int
-	progress scraper.ScraperProgress
-	error    error
+	width       int
+	height      int
+	progress    scraper.ScraperProgress
+	error       error
+	spinner     spinner.Model
+	progressBar progress.Model
+}
+
+func NewScraperView() *ScraperView {
+	sp := spinner.New()
+	sp.Spinner = spinner.Dot
+	sp.Style = lipgloss.NewStyle().Foreground(Colors.Accent)
+
+	pb := progress.New(
+		progress.WithDefaultGradient(),
+		progress.WithWidth(40),
+	)
+
+	return &ScraperView{
+		spinner:     sp,
+		progressBar: pb,
+	}
+}
+
+func (s *ScraperView) Init() tea.Cmd {
+	return s.spinner.Tick
 }
 
 func (s *ScraperView) Update(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		s.spinner, cmd = s.spinner.Update(msg)
+		return cmd
+	case progress.FrameMsg:
+		progressModel, cmd := s.progressBar.Update(msg)
+		s.progressBar = progressModel.(progress.Model)
+		return cmd
+	}
 	return nil
 }
 
 func (s *ScraperView) UpdateProgress(progress scraper.ScraperProgress) tea.Cmd {
 	s.progress = progress
+	// Update progress bar if we have progress info
+	if progress.TotalSources > 0 && progress.CurrentSource > 0 {
+		progressPercent := float64(progress.CurrentSource) / float64(progress.TotalSources)
+		return s.progressBar.SetPercent(progressPercent)
+	}
 	return nil
 }
 
@@ -192,40 +231,61 @@ func (s *ScraperView) View() string {
 		return ""
 	}
 
-	content := lipgloss.NewStyle().
-		Foreground(Colors.Accent).
-		Bold(true).
-		Render("🔍 Scraping jobs...")
+	// Header with spinner
+	header := lipgloss.JoinHorizontal(
+		lipgloss.Center,
+		s.spinner.View(),
+		" ",
+		lipgloss.NewStyle().Foreground(Colors.Accent).Bold(true).Render("Scraping jobs..."),
+	)
 
-	if s.progress.Source != "" {
-		progressText := fmt.Sprintf("\nSource: %s", s.progress.Source)
-		if s.progress.JobsFound > 0 {
-			progressText += fmt.Sprintf("\nJobs found: %d", s.progress.JobsFound)
-		}
-		if s.progress.TotalSources > 0 {
-			progressText += fmt.Sprintf("\nProgress: %d/%d sources",
-				s.progress.CurrentSource, s.progress.TotalSources)
-		}
-		if s.progress.ElapsedTime > 0 {
-			progressText += fmt.Sprintf("\nElapsed: %s",
-				s.progress.ElapsedTime.Round(time.Second))
-		}
-		if s.progress.Status != "" {
-			progressText += fmt.Sprintf("\nStatus: %s", s.progress.Status)
+	var contentParts []string
+	contentParts = append(contentParts, header)
+
+	// Progress bar if we have progress info
+	if s.progress.TotalSources > 0 && s.progress.CurrentSource > 0 {
+		progressPercent := float64(s.progress.CurrentSource) / float64(s.progress.TotalSources)
+		progressBar := s.progressBar.ViewAs(progressPercent)
+
+		progressInfo := fmt.Sprintf("Source %d/%d", s.progress.CurrentSource, s.progress.TotalSources)
+		if s.progress.Source != "" {
+			progressInfo = fmt.Sprintf("%s - %s", progressInfo, s.progress.Source)
 		}
 
-		content += lipgloss.NewStyle().
-			Foreground(Colors.Text).
-			MarginTop(1).
-			Render(progressText)
+		contentParts = append(contentParts, "")
+		contentParts = append(contentParts, progressBar)
+		contentParts = append(contentParts, progressInfo)
 	}
 
+	// Additional info
+	if s.progress.Source != "" {
+		infoParts := []string{}
+		if s.progress.JobsFound > 0 {
+			infoParts = append(infoParts, fmt.Sprintf("Jobs found: %d", s.progress.JobsFound))
+		}
+		if s.progress.ElapsedTime > 0 {
+			infoParts = append(infoParts, fmt.Sprintf("Elapsed: %s", s.progress.ElapsedTime.Round(time.Second)))
+		}
+		if s.progress.Status != "" {
+			infoParts = append(infoParts, fmt.Sprintf("Status: %s", s.progress.Status))
+		}
+
+		if len(infoParts) > 0 {
+			contentParts = append(contentParts, "")
+			contentParts = append(contentParts, strings.Join(infoParts, " | "))
+		}
+	}
+
+	// Error display
 	if s.error != nil {
 		errorText := lipgloss.NewStyle().
 			Foreground(Colors.Error).
-			Render(fmt.Sprintf("\nError: %v", s.error))
-		content += errorText
+			Render(fmt.Sprintf("Error: %v", s.error))
+		contentParts = append(contentParts, "")
+		contentParts = append(contentParts, errorText)
 	}
+
+	content := strings.Join(contentParts, "\n")
 
 	return Styles.Scraping.
 		Width(s.width).
