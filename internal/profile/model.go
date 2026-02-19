@@ -44,6 +44,10 @@ type Profile struct {
 
 	// Scoring weights (0-100)
 	ScoringWeights ScoringWeights `json:"scoring_weights"`
+
+	// CV-based data
+	CVData     *CVData `json:"cv_data,omitempty"`
+	CVMinScore int     `json:"cv_min_score,omitempty"` // Minimum CV match score
 }
 
 type SalaryRange struct {
@@ -159,6 +163,11 @@ func (p *Profile) GenerateFilters() []job.Filter {
 
 	if p.PostedBefore != nil {
 		filters = append(filters, job.PostedBefore(*p.PostedBefore))
+	}
+
+	// CV-based filtering
+	if p.CVData != nil && p.CVMinScore > 0 {
+		filters = append(filters, job.ByCVMatch(p.CVData, p.CVMinScore))
 	}
 
 	return filters

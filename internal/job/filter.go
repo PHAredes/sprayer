@@ -323,3 +323,23 @@ func PostedBefore(before time.Time) Filter {
 		return out
 	}
 }
+
+// CVMatcher interface for CV-based job matching
+type CVMatcher interface {
+	ScoreJob(*Job) int
+}
+
+// ByCVMatch returns jobs that match the provided CV
+func ByCVMatch(cv CVMatcher, minScore int) Filter {
+	return func(jobs []Job) []Job {
+		var filtered []Job
+		for _, j := range jobs {
+			score := cv.ScoreJob(&j)
+			if score >= minScore {
+				j.Score += score // Add CV score to existing score
+				filtered = append(filtered, j)
+			}
+		}
+		return filtered
+	}
+}
