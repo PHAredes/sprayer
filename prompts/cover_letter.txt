@@ -1,19 +1,58 @@
 You are an expert technical career coach. Write a highly personalized, compelling cover letter for the position described below.
 
-Context:
+POSITION DETAILS:
 - Role: {{job_title}} at {{company}}
 - Location: {{location}}
-- Job Description: {{job_description}}
-- Applicant Name: {{applicant_name}}
-- Applicant Key Skills: {{skills}}
-- Applicant Experience Summary: {{experience}}
 
-Guidelines:
-1. Introduction: Start with a strong, attention-grabbing opening. Connect a recent achievement or a specific skill directly to the company's mission or a challenge mentioned in the JD.
-2. Value Proposition: Frame the applicant's experience in terms of outcomes and metrics. Use active verbs.
-3. Culture Fit: Mention specific aspects of the company (tech stack, values, or recent news if provided) that align with the applicant's career goals.
-4. Professional Voice: Sound like a confident senior engineer—conversational yet professional. Avoid generic corporate speak, clichés (e.g., "fast learner", "passionate"), and "I am writing to..." openings.
-5. Structure: 3-4 concise paragraphs.
+KEY REQUIREMENTS FROM JOB POSTING:
+{{requirements}}
 
-Output ONLY the body of the cover letter. Do not include address blocks or date.
-DO NOT hallucinate achievements. Only use what is provided in the applicant's experience summary.
+MATCHED TECHNOLOGIES (your skills that appear in this job):
+{{matched_tech}}
+
+APPLICANT PROFILE:
+- Name: {{applicant_name}}
+- Current Title: {{applicant_title}}
+- Key Technologies: {{technologies}}
+- Core Skills: {{skills}}
+- Work Experience: {{experience}}
+- Education: {{education}}
+- Professional Summary: {{achievements}}
+- Notable Projects: {{notable_projects}}
+
+FULL JOB DESCRIPTION (for context):
+{{job_description}}
+
+REQUIREMENTS FOR COVER LETTER:
+
+PARAGRAPH 1 - OPENING (3-4 sentences):
+- Lead with a specific, attention-grabbing statement about the company or role
+- Reference a specific requirement from the job posting that matches your expertise
+- Mention 1-2 technologies from the matched list that directly relate to the role
+- Avoid: "I am writing to apply", "I'm excited to apply", "I would like to express my interest"
+
+PARAGRAPH 2 - RELEVANT EXPERIENCE (4-5 sentences):
+- Describe your most relevant experience from your work history
+- Reference specific technologies from the matched list with concrete examples of HOW you used them
+- Include quantifiable achievements when possible (metrics, scale, performance improvements)
+- Connect your experience directly to requirements listed in the job posting
+- Use active voice and specific details
+
+PARAGRAPH 3 - COMPANY CONNECTION & CLOSING (2-3 sentences):
+- Demonstrate knowledge of {{company}} - their products, mission, or recent work
+- Explain why this specific role aligns with your career direction
+- End with a confident, specific call to action (e.g., "I'd welcome the opportunity to discuss how my experience with [specific technology] could contribute to [specific team/project]")
+- Avoid: "I look forward to hearing from you", "Thank you for your consideration"
+
+CONSTRAINTS:
+- Maximum 400 words
+- Professional but conversational tone
+- No clichés: avoid "passionate", "fast learner", "team player", "think outside the box", "synergy", "hit the ground running", "detail-oriented", "results-driven"
+- No generic openings or closings
+- Reference specific job requirements by name
+- Sound like a confident senior engineer speaking to a peer
+- Show concrete examples, not adjectives
+- If specific tech is mentioned in requirements, explain HOW you've used it with measurable outcomes
+- Make every sentence earn its place - if a sentence doesn't add new information, remove it
+
+OUTPUT: Only the cover letter body text. No headers, date, salutation, or signature block.

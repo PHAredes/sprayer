@@ -37,6 +37,7 @@ type Model struct {
 	jobList     *SimpleJobList
 	jobDetail   *JobDetail
 	profileView *ProfileView
+	profileForm *ProfileForm
 	filterView  *FilterView
 	statusBar   *StatusBar
 	helpView    help.Model
@@ -66,6 +67,7 @@ const (
 	StateDetail
 	StateFilters
 	StateProfiles
+	StateProfileForm
 	StateScraping
 	StateHelp
 	StateReview
@@ -130,6 +132,7 @@ func NewModel() (Model, error) {
 	m.jobList = &SimpleJobList{jobs: m.filteredJobs}
 	m.jobDetail = NewJobDetail()
 	m.profileView = NewProfileView(profiles, activeProfile)
+	m.profileForm = NewProfileForm(profileStore)
 	m.filterView = NewFilterView(activeProfile)
 	m.statusBar = NewStatusBar()
 
@@ -225,24 +228,79 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.setState(StateList)
 
 	case ProfileCreateMsg:
-		// TODO: Implement profile creation form
-		m.setStatus("Profile creation coming soon...")
-		m.setState(StateList)
+		m.state = StateProfileForm
+		return m, m.profileForm.StartCreate()
 
 	case ProfileEditMsg:
-		// TODO: Implement profile editing form
-		m.setStatus("Profile editing coming soon...")
-		m.setState(StateList)
+		m.state = StateProfileForm
+		return m, m.profileForm.StartEdit(msg.Profile)
 
 	case ProfileDeleteMsg:
-		// TODO: Implement profile deletion with confirmation
-		m.setStatus(fmt.Sprintf("Profile '%s' deleted", msg.Profile.Name))
-		m.setState(StateList)
+		m.state = StateProfileForm
+		return m, m.profileForm.StartDeleteConfirm(msg.Profile)
 
 	case ProfileImportMsg:
-		// TODO: Implement profile import functionality
-		m.setStatus("Profile import coming soon...")
-		m.setState(StateList)
+		m.state = StateProfileForm
+		return m, m.profileForm.StartImport()
+
+	case ProfileCreatedMsg:
+		m.profiles, _ = m.profileStore.All()
+		m.activeProfile = msg.Profile
+		m.profileView = NewProfileView(m.profiles, m.activeProfile)
+		m.applyProfileFilters()
+		m.profileForm.Reset()
+		m.setState(StateProfiles)
+		m.setStatus(fmt.Sprintf("Profile '%s' created", msg.Profile.Name))
+		return m, nil
+
+	case ProfileUpdatedMsg:
+		m.profiles, _ = m.profileStore.All()
+		if m.activeProfile.ID == msg.Profile.ID {
+			m.activeProfile = msg.Profile
+		}
+		m.profileView = NewProfileView(m.profiles, m.activeProfile)
+		m.applyProfileFilters()
+		m.profileForm.Reset()
+		m.setState(StateProfiles)
+		m.setStatus(fmt.Sprintf("Profile '%s' updated", msg.Profile.Name))
+		return m, nil
+
+	case ProfileDeletedMsg:
+		m.profiles, _ = m.profileStore.All()
+		if len(m.profiles) == 0 {
+			m.activeProfile = profile.NewDefaultProfile()
+			m.profileStore.Save(m.activeProfile)
+			m.profiles = []profile.Profile{m.activeProfile}
+		} else if m.activeProfile.ID == msg.Profile.ID {
+			m.activeProfile = m.profiles[0]
+		}
+		m.profileView = NewProfileView(m.profiles, m.activeProfile)
+		m.applyProfileFilters()
+		m.profileForm.Reset()
+		m.setState(StateProfiles)
+		m.setStatus(fmt.Sprintf("Profile '%s' deleted", msg.Profile.Name))
+		return m, nil
+
+	case ProfileImportedMsg:
+		m.profiles, _ = m.profileStore.All()
+		m.profileView = NewProfileView(m.profiles, m.activeProfile)
+		m.profileForm.Reset()
+		m.setState(StateProfiles)
+		m.setStatus(fmt.Sprintf("Profile '%s' imported", msg.Profile.Name))
+		return m, nil
+
+	case ProfileErrorMsg:
+		m.err = msg.Err
+		m.setStatus(fmt.Sprintf("Error: %v", msg.Err))
+		m.profileForm.Reset()
+		m.setState(StateProfiles)
+		return m, nil
+
+	case ProfileOperationCancelledMsg:
+		m.profileForm.Reset()
+		m.setState(StateProfiles)
+		m.setStatus("Operation cancelled")
+		return m, nil
 	}
 
 	// Update current view component
@@ -270,6 +328,8 @@ func (m *Model) View() string {
 		content = m.renderFilterView()
 	case StateProfiles:
 		content = m.renderProfileView()
+	case StateProfileForm:
+		content = m.renderProfileFormView()
 	case StateScraping:
 		content = m.renderScrapingView()
 	case StateHelp:
@@ -319,6 +379,11 @@ func (m *Model) renderFilterView() string {
 
 func (m *Model) renderProfileView() string {
 	return m.profileView.View(m.width, m.height-1)
+}
+
+func (m *Model) renderProfileFormView() string {
+	m.profileForm.SetSize(m.width, m.height-1)
+	return m.profileForm.View()
 }
 
 func (m *Model) renderScrapingView() string {
@@ -383,6 +448,9 @@ func (m *Model) updateCurrentView(msg tea.Msg) tea.Cmd {
 		return m.filterView.Update(msg)
 	case StateProfiles:
 		return m.profileView.Update(msg)
+	case StateProfileForm:
+		_, cmd := m.profileForm.Update(msg)
+		return cmd
 	}
 	return nil
 }
@@ -403,6 +471,8 @@ func (m *Model) handleKeyMsg(msg tea.KeyMsg) tea.Cmd {
 		return m.handleFilterKeys(msg)
 	case StateProfiles:
 		return m.handleProfileKeys(msg)
+	case StateProfileForm:
+		return nil
 	}
 	return nil
 }
@@ -489,6 +559,7 @@ func (m *Model) resizeComponents() {
 	m.jobDetail.SetSize(m.width, m.height-1)
 	m.filterView.SetSize(m.width, m.height-1)
 	m.profileView.SetSize(m.width, m.height-1)
+	m.profileForm.SetSize(m.width, m.height-1)
 }
 
 func (m *Model) applyProfileFilters() {

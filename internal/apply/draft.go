@@ -1,9 +1,11 @@
 package apply
 
 import (
+	"bufio"
 	"encoding/base64"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -12,14 +14,12 @@ import (
 	"sprayer/internal/profile"
 )
 
-// Draft generates a Maildir-format email draft file for mu4e.
 func Draft(j job.Job, p profile.Profile, subject, body string) (string, error) {
 	maildirPath := filepath.Join(os.Getenv("HOME"), "Maildir", "drafts", "new")
 	if err := os.MkdirAll(maildirPath, 0755); err != nil {
 		return "", fmt.Errorf("create drafts dir: %w", err)
 	}
 
-	// Determine recipient
 	to := j.Email
 	if to == "" {
 		return "", fmt.Errorf("no email address for job %s", j.ID)
@@ -28,7 +28,6 @@ func Draft(j job.Job, p profile.Profile, subject, body string) (string, error) {
 	filename := fmt.Sprintf("%d.sprayer.%s", time.Now().Unix(), sanitize(j.ID))
 	draftPath := filepath.Join(maildirPath, filename)
 
-	// Try to attach CV PDF
 	var attachmentPart string
 	cvPDF := findPDF(p.CVPath)
 	if cvPDF != "" {
@@ -45,7 +44,6 @@ Content-Transfer-Encoding: base64
 		}
 	}
 
-	// Build the email
 	var msg strings.Builder
 	msg.WriteString(fmt.Sprintf("From: %s\n", p.ContactEmail))
 	msg.WriteString(fmt.Sprintf("To: %s\n", to))
@@ -76,12 +74,10 @@ Content-Transfer-Encoding: base64
 
 const boundary = "sprayer-boundary"
 
-// findPDF looks for a .pdf file alongside or derived from the given tex path.
 func findPDF(texPath string) string {
 	if texPath == "" {
 		return ""
 	}
-	// Try the same name with .pdf extension
 	pdf := strings.TrimSuffix(texPath, filepath.Ext(texPath)) + ".pdf"
 	if _, err := os.Stat(pdf); err == nil {
 		return pdf
@@ -105,4 +101,97 @@ func wrapBase64(s string) string {
 		out.WriteString("\n")
 	}
 	return out.String()
+}
+
+func EditDraft(draftPath string) error {
+	editor := getEditor()
+	if editor == "" {
+		editor = "emacs"
+	}
+
+	cmd := exec.Command(editor, draftPath)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("editor failed: %w", err)
+	}
+
+	return nil
+}
+
+func EditAndSend(draftPath string) error {
+	if err := EditDraft(draftPath); err != nil {
+		return err
+	}
+
+	content, err := os.ReadFile(draftPath)
+	if err != nil {
+		return fmt.Errorf("read draft: %w", err)
+	}
+
+	draft, err := parseDraftContent(string(content), draftPath)
+	if err != nil {
+		return fmt.Errorf("parse draft: %w", err)
+	}
+
+	fmt.Printf("\nDraft ready to send:\n")
+	fmt.Printf("  To: %s\n", draft.To)
+	fmt.Printf("  Subject: %s\n", draft.Subject)
+	fmt.Printf("\nSend? [y/N]: ")
+
+	reader := bufio.NewReader(os.Stdin)
+	response, _ := reader.ReadString('\n')
+	response = strings.TrimSpace(strings.ToLower(response))
+
+	if response == "y" || response == "yes" {
+		return sendViaSMTP(draft)
+	}
+
+	fmt.Println("Draft saved, not sent.")
+	return nil
+}
+
+func parseDraftContent(content, draftPath string) (*EmailDraft, error) {
+	draft := &EmailDraft{
+		DraftPath: draftPath,
+		ID:        filepath.Base(draftPath),
+		CreatedAt: time.Now(),
+	}
+
+	lines := strings.Split(content, "\n")
+	inBody := false
+	var bodyLines []string
+
+	for _, line := range lines {
+		if inBody {
+			bodyLines = append(bodyLines, line)
+			continue
+		}
+
+		if line == "" {
+			inBody = true
+			continue
+		}
+
+		parts := strings.SplitN(line, ": ", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		switch strings.ToLower(parts[0]) {
+		case "from":
+			draft.From = parts[1]
+		case "to":
+			draft.To = parts[1]
+		case "subject":
+			draft.Subject = parts[1]
+		case "date":
+			draft.CreatedAt, _ = time.Parse(time.RFC1123Z, parts[1])
+		}
+	}
+
+	draft.Body = strings.Join(bodyLines, "\n")
+	return draft, nil
 }

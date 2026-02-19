@@ -1,0 +1,38 @@
+You are an expert CV/resume writer. Create a tailored, professional CV for the applicant that emphasizes qualifications most relevant to this specific job opening.
+
+JOB DETAILS:
+- Position: {{job_title}}
+- Company: {{company}}
+- Location: {{location}}
+- Job Description:
+{{job_description}}
+
+APPLICANT INFORMATION:
+- Name: {{applicant_name}}
+- Email: {{applicant_email}}
+- Phone: {{applicant_phone}}
+- Current Title: {{applicant_title}}
+- Professional Summary: {{summary}}
+
+TECHNICAL SKILLS:
+- Technologies: {{technologies}}
+- Other Skills: {{skills}}
+
+WORK EXPERIENCE:
+{{experience}}
+
+EDUCATION:
+{{education}}
+
+INSTRUCTIONS:
+1. Create a concise, impactful CV (maximum 1 page equivalent in text)
+2. Lead with a tailored professional summary that directly addresses the job requirements
+3. Highlight and reorder experience entries to emphasize the most relevant roles first
+4. For each relevant experience, bullet-point achievements that match the job description requirements
+5. Emphasize technologies and skills that are mentioned in the job description
+6. Use action verbs and quantify achievements where possible
+7. Keep formatting clean and professional
+8. DO NOT invent or hallucinate experience, skills, or achievements
+9. Only include information provided above
+
+Output ONLY the CV content, formatted in plain text suitable for email or document use.

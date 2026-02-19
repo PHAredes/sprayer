@@ -76,6 +76,12 @@ func (f *Footer) View(mode AppMode) string {
 		keybinds = "esc: cancel | ?: help | q: quit"
 	case ModeHelp:
 		keybinds = "esc/q: back to jobs"
+	case ModeApplyConfirm:
+		keybinds = "↑↓: navigate | enter: select | y: send directly | n/esc: cancel"
+	case ModeApplying:
+		keybinds = "Please wait..."
+	case ModeEmailComposer:
+		keybinds = "tab: next field | ctrl+s: send | ctrl+d: save draft | esc: cancel"
 	default:
 		keybinds = "?: help | q: quit"
 	}
@@ -141,7 +147,12 @@ func (j *SimpleJobList) View() string {
 			trapIndicator = " [!]"
 		}
 
-		line := fmt.Sprintf("[%d]%s %s @ %s", job.Score, trapIndicator, job.Title, job.Company)
+		appliedIndicator := ""
+		if job.Applied {
+			appliedIndicator = " ✓"
+		}
+
+		line := fmt.Sprintf("[%d]%s%s %s @ %s", job.Score, trapIndicator, appliedIndicator, job.Title, job.Company)
 		lines = append(lines, style.Render(line))
 	}
 
@@ -237,7 +248,6 @@ func (s *ScraperView) View() string {
 		return ""
 	}
 
-	// Header with spinner
 	header := lipgloss.JoinHorizontal(
 		lipgloss.Center,
 		s.spinner.View(),
@@ -248,7 +258,6 @@ func (s *ScraperView) View() string {
 	var contentParts []string
 	contentParts = append(contentParts, header)
 
-	// Progress bar if we have progress info
 	if s.progress.TotalSources > 0 && s.progress.CurrentSource > 0 {
 		progressPercent := float64(s.progress.CurrentSource) / float64(s.progress.TotalSources)
 		progressBar := s.progressBar.ViewAs(progressPercent)
@@ -263,7 +272,6 @@ func (s *ScraperView) View() string {
 		contentParts = append(contentParts, progressInfo)
 	}
 
-	// Additional info
 	if s.progress.Source != "" {
 		infoParts := []string{}
 		if s.progress.JobsFound > 0 {
@@ -282,7 +290,6 @@ func (s *ScraperView) View() string {
 		}
 	}
 
-	// Error display
 	if s.error != nil {
 		errorText := lipgloss.NewStyle().
 			Foreground(Colors.Error).
@@ -297,4 +304,137 @@ func (s *ScraperView) View() string {
 		Width(s.width).
 		Height(s.height).
 		Render(content)
+}
+
+type ApplyConfirmView struct {
+	job          *job.Job
+	width        int
+	height       int
+	selected     int
+	options      []string
+	sendDirect   bool
+	cvAvailable  bool
+	profileReady bool
+}
+
+func NewApplyConfirmView() *ApplyConfirmView {
+	return &ApplyConfirmView{
+		options: []string{"Create Draft (edit before sending)", "Send Directly", "Cancel"},
+	}
+}
+
+func (a *ApplyConfirmView) SetJob(j *job.Job) {
+	a.job = j
+	a.selected = 0
+}
+
+func (a *ApplyConfirmView) SetOptions(sendDirect, cvAvailable, profileReady bool) {
+	a.sendDirect = sendDirect
+	a.cvAvailable = cvAvailable
+	a.profileReady = profileReady
+}
+
+func (a *ApplyConfirmView) SetSize(width, height int) {
+	a.width = width
+	a.height = height
+}
+
+func (a *ApplyConfirmView) Update(msg tea.Msg) (int, bool) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if a.selected > 0 {
+				a.selected--
+			}
+		case "down", "j":
+			if a.selected < len(a.options)-1 {
+				a.selected++
+			}
+		case "enter":
+			return a.selected, true
+		case "y":
+			return 1, true
+		case "n", "esc":
+			return len(a.options) - 1, true
+		}
+	}
+	return -1, false
+}
+
+func (a *ApplyConfirmView) View() string {
+	if a.job == nil {
+		return "No job selected"
+	}
+
+	var b strings.Builder
+
+	title := lipgloss.NewStyle().
+		Foreground(Colors.Primary).
+		Bold(true).
+		Render("Apply to Job")
+
+	b.WriteString(title)
+	b.WriteString("\n\n")
+
+	jobInfo := lipgloss.NewStyle().Foreground(Colors.Text)
+	b.WriteString(jobInfo.Render(fmt.Sprintf("Position: %s", a.job.Title)))
+	b.WriteString("\n")
+	b.WriteString(jobInfo.Render(fmt.Sprintf("Company:  %s", a.job.Company)))
+	b.WriteString("\n")
+	if a.job.Location != "" {
+		b.WriteString(jobInfo.Render(fmt.Sprintf("Location: %s", a.job.Location)))
+		b.WriteString("\n")
+	}
+	if a.job.Salary != "" {
+		b.WriteString(jobInfo.Render(fmt.Sprintf("Salary:   %s", a.job.Salary)))
+		b.WriteString("\n")
+	}
+	b.WriteString(jobInfo.Render(fmt.Sprintf("Email:    %s", a.job.Email)))
+	b.WriteString("\n\n")
+
+	if a.job.HasTraps {
+		warning := lipgloss.NewStyle().Foreground(Colors.Warning).Bold(true)
+		b.WriteString(warning.Render("⚠ This job has detected traps/red flags!"))
+		b.WriteString("\n\n")
+	}
+
+	infoStyle := lipgloss.NewStyle().Foreground(Colors.Muted)
+	if a.cvAvailable {
+		b.WriteString(infoStyle.Render("✓ CV available"))
+	} else {
+		b.WriteString(infoStyle.Render("✗ No CV configured"))
+	}
+	b.WriteString("  ")
+	if a.profileReady {
+		b.WriteString(infoStyle.Render("✓ LLM configured"))
+	} else {
+		b.WriteString(infoStyle.Render("✗ LLM not configured"))
+	}
+	b.WriteString("\n\n")
+
+	b.WriteString(lipgloss.NewStyle().Foreground(Colors.Text).Render("How would you like to proceed?"))
+	b.WriteString("\n\n")
+
+	for i, option := range a.options {
+		style := Styles.ListItem
+		if i == a.selected {
+			style = Styles.SelectedItem
+		}
+		b.WriteString(style.Render(fmt.Sprintf("  %s", option)))
+		b.WriteString("\n")
+	}
+
+	b.WriteString("\n")
+	b.WriteString(lipgloss.NewStyle().Foreground(Colors.Muted).Render("↑↓/jk: navigate | enter: select | y: send directly | n/esc: cancel"))
+
+	return lipgloss.NewStyle().
+		Width(a.width).
+		Height(a.height).
+		Padding(1, 2).
+		Render(b.String())
+}
+
+func (a *ApplyConfirmView) SelectedOption() int {
+	return a.selected
 }
