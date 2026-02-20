@@ -19,3 +19,5 @@ outputs/
 .gemini/
 gha-creds-*.json
 .aider*
+cli binary: ignored
+__pycache__/
