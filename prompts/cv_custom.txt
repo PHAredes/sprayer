@@ -1,38 +1,71 @@
-You are an expert CV/resume writer. Create a tailored, professional CV for the applicant that emphasizes qualifications most relevant to this specific job opening.
+Create a tailored CV that highlights the most relevant qualifications for this job.
 
-JOB DETAILS:
-- Position: {{job_title}}
+TARGET POSITION:
+- Role: {{job_title}}
 - Company: {{company}}
 - Location: {{location}}
-- Job Description:
+- Description:
 {{job_description}}
 
-APPLICANT INFORMATION:
+CANDIDATE:
 - Name: {{applicant_name}}
 - Email: {{applicant_email}}
 - Phone: {{applicant_phone}}
 - Current Title: {{applicant_title}}
-- Professional Summary: {{summary}}
+- Summary: {{summary}}
 
-TECHNICAL SKILLS:
+SKILLS:
 - Technologies: {{technologies}}
 - Other Skills: {{skills}}
 
-WORK EXPERIENCE:
+EXPERIENCE:
 {{experience}}
 
 EDUCATION:
 {{education}}
 
-INSTRUCTIONS:
-1. Create a concise, impactful CV (maximum 1 page equivalent in text)
-2. Lead with a tailored professional summary that directly addresses the job requirements
-3. Highlight and reorder experience entries to emphasize the most relevant roles first
-4. For each relevant experience, bullet-point achievements that match the job description requirements
-5. Emphasize technologies and skills that are mentioned in the job description
-6. Use action verbs and quantify achievements where possible
-7. Keep formatting clean and professional
-8. DO NOT invent or hallucinate experience, skills, or achievements
-9. Only include information provided above
+---
 
-Output ONLY the CV content, formatted in plain text suitable for email or document use.
+CV RULES:
+
+1. PROFESSIONAL SUMMARY (2-3 lines)
+   - Lead with years of experience and primary expertise
+   - Mention 2-3 technologies most relevant to THIS job
+   - Skip generic "results-driven professional" language
+
+2. SKILLS SECTION
+   - Group: Languages, Frameworks, Tools, Platforms
+   - List most relevant to this job FIRST
+   - Remove skills not mentioned in job description
+
+3. EXPERIENCE
+   - Reorder to show most relevant positions first
+   - Each bullet point starts with action verb
+   - Include metrics: scale, performance, team size
+   - Highlight projects using tech from job description
+
+4. EDUCATION
+   - Include if < 10 years experience OR specifically relevant
+   - Otherwise: one line at bottom
+
+5. FORMATTING
+   - Clean, scannable structure
+   - Maximum 1 page (4000 characters)
+   - Use consistent date formatting
+   - No pronouns ("I", "my")
+
+ACTION VERBS:
+- Built, Developed, Created, Designed, Implemented
+- Led, Managed, Directed, Coordinated
+- Reduced, Improved, Increased, Decreased
+- Launched, Shipped, Delivered, Deployed
+
+FORBIDDEN:
+- "Responsible for"
+- "Worked on"
+- "Helped with"
+- "Participated in"
+- Any lying or exaggeration
+- Information not provided above
+
+OUTPUT: Plain text CV, formatted for easy reading. No headers or separators beyond what's in the content.

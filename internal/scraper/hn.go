@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"html"
 	"net/http"
 	"strings"
 	"time"
@@ -150,7 +151,6 @@ func scoreHNJob(title, desc string) int {
 }
 
 func stripHTML(s string) string {
-	// Simple HTML tag stripper
 	var out strings.Builder
 	inTag := false
 	for _, r := range s {
@@ -166,7 +166,7 @@ func stripHTML(s string) string {
 			out.WriteRune(r)
 		}
 	}
-	return strings.TrimSpace(out.String())
+	return html.UnescapeString(strings.TrimSpace(out.String()))
 }
 
 func httpGet(url string) ([]byte, error) {

@@ -1,16 +1,48 @@
-Write a brief, high-impact cold application email for a software engineering position.
+You are a senior engineer reaching out to a hiring manager. Write a cold email that gets responses.
 
-Context:
-- Role: {{job_title}} at {{company}}
+CONTEXT:
+- Position: {{job_title}} at {{company}}
 - Location: {{location}}
-- Applicant: {{applicant_name}}
-- Key Skills: {{skills}}
+- Your name: {{applicant_name}}
+- Your expertise: {{skills}}
 
-Requirements:
-- Opening: Direct and specific. Connect the applicant's expertise to a core technical requirement of the role.
-- Body: 1-2 short paragraphs highlighting 2 specific technical achievements from the applicant's background that solve a problem likely faced by {{company}}.
-- Tone: Peer-to-peer (engineer to hiring manager/recruiter). No fluff, no "I believe I am the best fit."
-- Call to Action: Clear and low-friction (e.g., "Would you be open to a quick chat next week?").
-- Length: Keep it under 150 words.
+WRITING RULES:
 
-Output ONLY the email body. Do not include a subject line.
+1. SUBJECT LINE: Don't write one. The system adds it.
+
+2. OPENING (first sentence):
+   - Skip "I am writing to express interest"
+   - Lead with something specific you noticed about their work/tech/product
+   - Example: "I noticed you're building X with Y - that's exactly the stack I've been shipping production code on for the past 3 years."
+
+3. BODY (1-2 paragraphs max):
+   - Connect ONE specific achievement to ONE problem they're solving
+   - Use numbers and concrete outcomes
+   - Skip adjectives ("passionate", "innovative", "dynamic")
+   - Show, don't tell
+
+4. CLOSING (1 sentence):
+   - Low-friction ask, not a demand
+   - "Would you have 15 minutes this week to chat?"
+   - "Open to a quick call?"
+
+5. LENGTH: Maximum 120 words. Every word earns its place.
+
+ANTI-PATTERNS (avoid these):
+- "I believe I would be a great fit"
+- "I am excited about the opportunity"
+- "I have extensive experience"
+- "I am a fast learner"
+- "team player"
+- "detail-oriented"
+- Any sentence starting with "I am" or "I have"
+- Corporate jargon
+- Explaining what the company does (they know)
+
+TONE:
+- You're a peer talking to a peer
+- Confident but not arrogant
+- Brief and direct
+- Like a DM to a colleague
+
+OUTPUT: Email body only. No subject, no signature.

@@ -1,58 +1,83 @@
-You are an expert technical career coach. Write a highly personalized, compelling cover letter for the position described below.
+Write a cover letter that sounds like it came from a human, not an AI.
 
-POSITION DETAILS:
+POSITION:
 - Role: {{job_title}} at {{company}}
 - Location: {{location}}
 
-KEY REQUIREMENTS FROM JOB POSTING:
+REQUIREMENTS FROM POSTING:
 {{requirements}}
 
-MATCHED TECHNOLOGIES (your skills that appear in this job):
+YOUR MATCHING SKILLS:
 {{matched_tech}}
 
-APPLICANT PROFILE:
+YOUR PROFILE:
 - Name: {{applicant_name}}
-- Current Title: {{applicant_title}}
+- Title: {{applicant_title}}
 - Key Technologies: {{technologies}}
-- Core Skills: {{skills}}
-- Work Experience: {{experience}}
+- Skills: {{skills}}
+- Experience: {{experience}}
 - Education: {{education}}
-- Professional Summary: {{achievements}}
-- Notable Projects: {{notable_projects}}
+- Achievements: {{achievements}}
+- Projects: {{notable_projects}}
 
-FULL JOB DESCRIPTION (for context):
+FULL JOB DESCRIPTION:
 {{job_description}}
 
-REQUIREMENTS FOR COVER LETTER:
+---
 
-PARAGRAPH 1 - OPENING (3-4 sentences):
-- Lead with a specific, attention-grabbing statement about the company or role
-- Reference a specific requirement from the job posting that matches your expertise
-- Mention 1-2 technologies from the matched list that directly relate to the role
-- Avoid: "I am writing to apply", "I'm excited to apply", "I would like to express my interest"
+STRUCTURE:
 
-PARAGRAPH 2 - RELEVANT EXPERIENCE (4-5 sentences):
-- Describe your most relevant experience from your work history
-- Reference specific technologies from the matched list with concrete examples of HOW you used them
-- Include quantifiable achievements when possible (metrics, scale, performance improvements)
-- Connect your experience directly to requirements listed in the job posting
-- Use active voice and specific details
+PARAGRAPH 1 - THE HOOK (2-3 sentences)
+Don't start with "I am writing to apply." Start with something specific:
+- A recent company announcement, product launch, or technical challenge they're solving
+- A connection between their tech stack and your specific experience
+- Something you genuinely find interesting about their work
 
-PARAGRAPH 3 - COMPANY CONNECTION & CLOSING (2-3 sentences):
-- Demonstrate knowledge of {{company}} - their products, mission, or recent work
-- Explain why this specific role aligns with your career direction
-- End with a confident, specific call to action (e.g., "I'd welcome the opportunity to discuss how my experience with [specific technology] could contribute to [specific team/project]")
-- Avoid: "I look forward to hearing from you", "Thank you for your consideration"
+Example openings:
+- "Your migration from monolith to microservices caught my attention - I led a similar transition at [company], reducing deployment time from 2 hours to 8 minutes."
+- "After reading about [company]'s expansion into [market], I noticed you're looking for engineers who understand both [tech A] and [tech B]."
 
-CONSTRAINTS:
-- Maximum 400 words
-- Professional but conversational tone
-- No clichés: avoid "passionate", "fast learner", "team player", "think outside the box", "synergy", "hit the ground running", "detail-oriented", "results-driven"
-- No generic openings or closings
-- Reference specific job requirements by name
-- Sound like a confident senior engineer speaking to a peer
-- Show concrete examples, not adjectives
-- If specific tech is mentioned in requirements, explain HOW you've used it with measurable outcomes
-- Make every sentence earn its place - if a sentence doesn't add new information, remove it
+PARAGRAPH 2 - THE EVIDENCE (3-4 sentences)
+- Pick ONE relevant achievement from your experience
+- Include specific metrics: scale, performance, team size, timeline
+- Connect it directly to something in the job description
+- Use active voice: "I built", "I led", "I reduced"
 
-OUTPUT: Only the cover letter body text. No headers, date, salutation, or signature block.
+Example: "At [company], I built the real-time notification system handling 50k concurrent connections. It reduced API calls by 40% and became the foundation for our mobile push infrastructure. I see you're tackling similar scalability challenges with your WebSocket architecture."
+
+PARAGRAPH 3 - THE CLOSE (1-2 sentences)
+- Brief connection to why this role specifically
+- Natural sign-off, not "Thank you for your consideration"
+
+Example: "I'd love to discuss how my experience with distributed systems could contribute to your platform team."
+
+---
+
+WRITING RULES:
+
+FORBIDDEN PHRASES:
+- "I am writing to express my interest"
+- "I am excited about the opportunity"
+- "I believe I would be a great fit"
+- "I am passionate about"
+- "fast learner"
+- "team player"
+- "detail-oriented"
+- "results-driven"
+- "think outside the box"
+- "hit the ground running"
+- "proven track record"
+- "synergy"
+- "leverage"
+- Any sentence starting with "I am" or "I have"
+
+STYLE:
+- Maximum 300 words
+- Professional but human
+- Specific over generic
+- Numbers over adjectives
+- Active voice
+- Short sentences
+- No corporate speak
+
+OUTPUT: Cover letter body only. No headers, dates, or signature blocks.

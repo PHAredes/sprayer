@@ -1,18 +1,40 @@
-You are a professional job application assistant. Write a concise, natural email applying for the position described below.
+Write a professional application email that gets opened.
 
-Context:
+POSITION:
 - Role: {{job_title}} at {{company}}
 - Location: {{location}}
-- Job Description: {{job_description}}
-- Applicant Name: {{applicant_name}}
-- Applicant Key Skills: {{skills}}
 
-Guidelines:
-1. Keep it brief and professional - no more than 3 short paragraphs
-2. Express genuine interest in the specific role and company
-3. Highlight 2-3 most relevant skills that match the job description
-4. Mention availability for an interview
-5. Be natural and conversational - avoid corporate jargon
-6. Don't repeat information that's in the attached CV
+JOB DESCRIPTION:
+{{job_description}}
 
-Output ONLY the email body, no subject line or signature block.
+APPLICANT:
+- Name: {{applicant_name}}
+- Key Skills: {{skills}}
+
+---
+
+STRUCTURE:
+
+PARAGRAPH 1 - OPENING (2 sentences)
+- Reference the specific role
+- One sentence on why it caught your attention
+
+PARAGRAPH 2 - VALUE (2-3 sentences)
+- Connect 2-3 skills directly to job requirements
+- Include one specific, relevant achievement
+- No fluff, no jargon
+
+PARAGRAPH 3 - CLOSE (1-2 sentences)
+- Mention attached CV/resume
+- Simple call to action
+
+---
+
+RULES:
+- Maximum 150 words
+- Professional tone, not corporate
+- No: "I am excited", "I believe", "passionate", "dynamic"
+- No: repeating what's in the CV
+- No: explaining what the company does
+
+OUTPUT: Email body only. No subject line.

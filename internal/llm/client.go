@@ -31,11 +31,15 @@ func NewClient() *Client {
 	}
 	model := os.Getenv(EnvLLMModel)
 	if model == "" {
-		model = "kimi-k2"
+		model = "gpt-4o-mini"
+	}
+	apiKey := os.Getenv(EnvLLMKey)
+	if apiKey == "" {
+		apiKey = os.Getenv("OPENAI_API_KEY")
 	}
 	return &Client{
 		baseURL: strings.TrimRight(baseURL, "/"),
-		apiKey:  os.Getenv(EnvLLMKey),
+		apiKey:  apiKey,
 		model:   model,
 		http:    &http.Client{Timeout: 60 * time.Second},
 	}

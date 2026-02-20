@@ -1,24 +1,74 @@
-Summarize the following job posting for an automated job-matching engine. 
-Focus on extracting core responsibilities, essential technical requirements, and identifying potential "seniority" markers through specific achievements mentioned.
+You are a job market intelligence analyst. Extract structured data from this job posting with high accuracy.
 
-Job Posting:
+JOB POSTING:
 {{job_description}}
 
-Output a valid JSON object with EXACTLY these fields:
-- "title": string (official job title)
-- "company": string (company name)
-- "location": string (remote, hybrid, or specific city/country)
-- "salary": string (extracted salary range or "Not specified")
-- "essential_skills": array of strings (top 5-8 mandatory technical skills)
-- "preferred_skills": array of strings (nice-to-have skills)
-- "experience_years": integer (estimated minimum years of experience, 0 if not specified)
-- "metrics_found": array of strings (any specific metrics or KPIs mentioned in the description, e.g. "managed 10 people", "scaled to 1M users")
-- "is_remote": boolean (true if remote is an option)
-- "top_keywords": array of strings (5-10 SEO-style keywords for this role)
+OUTPUT REQUIREMENTS:
+Return a valid JSON object with these exact fields. No markdown, no explanations.
 
-Constraints:
-- Output ONLY valid JSON.
-- No markdown fences (no ```json).
-- No explanations.
-- If a field is missing in the text, use "Not specified" for strings or [] for arrays.
-- DO NOT invent or hallucinate information not present in the text.
+{
+  "title": "string - official job title, normalized (e.g., 'Senior Software Engineer' not 'SENIOR SOFTWARE ENGINEER!!!')",
+  "company": "string - company name as written",
+  "location": "string - primary location. Format: 'City, Country' or 'Remote' or 'Hybrid - City, Country'",
+  "salary": "string - salary range with currency. Examples: '$120,000 - $180,000', '€80k-120k', 'Not specified'",
+  "salary_min": "integer - minimum salary as number (0 if not specified)",
+  "salary_max": "integer - maximum salary as number (0 if not specified)",
+  "salary_currency": "string - ISO currency code (USD, EUR, GBP, etc.) or empty string",
+  "essential_skills": ["array of 5-8 mandatory technical skills - lowercase, normalized"],
+  "preferred_skills": ["array of nice-to-have skills - lowercase"],
+  "experience_years": "integer - minimum years required (0 if not specified)",
+  "seniority": "string - one of: 'entry', 'mid', 'senior', 'lead', 'principal', 'executive', 'unspecified'",
+  "employment_type": "string - one of: 'full-time', 'part-time', 'contract', 'freelance', 'internship', 'unspecified'",
+  "is_remote": "boolean - true if remote work is an option",
+  "is_hybrid": "boolean - true if hybrid work is mentioned",
+  "benefits": ["array of key benefits mentioned"],
+  "tech_stack": ["array of specific technologies/frameworks/tools mentioned"],
+  "industry": "string - industry sector if identifiable (e.g., 'fintech', 'healthcare', 'e-commerce')",
+  "company_size": "string - 'startup', 'scale-up', 'mid-size', 'enterprise', or 'unknown'",
+  "application_url": "string - direct application link if different from source",
+  "contact_email": "string - recruiter or hiring manager email if provided",
+  "red_flags": ["array of concerning phrases: 'unlimited PTO', 'fast-paced environment', 'wearing multiple hats', etc."],
+  "green_flags": ["array of positive indicators: 'well-funded', 'profitable', 'work-life balance', etc."],
+  "summary": "string - 1-2 sentence executive summary of the role"
+}
+
+EXTRACTION RULES:
+
+1. SKILLS: Extract actual technologies/skills, not generic phrases. 
+   - Good: "python", "kubernetes", "react", "aws"
+   - Bad: "strong communication", "team player", "self-motivated"
+
+2. SALARY: Parse any format. Convert to numbers.
+   - "$120-180k" -> salary_min: 120000, salary_max: 180000, salary_currency: "USD"
+   - "€80,000 - €120,000 per year" -> salary_min: 80000, salary_max: 120000
+   - "Competitive salary" -> "Not specified" with zeros
+
+3. SENIORITY: Infer from title and requirements.
+   - entry: "Junior", "Graduate", "0-2 years", "Associate"
+   - mid: "Mid-level", "2-5 years", no seniority marker
+   - senior: "Senior", "Lead", "5+ years", "expert"
+   - lead: "Tech Lead", "Team Lead", "Engineering Lead"
+   - principal: "Principal", "Staff", "Architect"
+
+4. RED FLAGS: Flag these if present:
+   - "unlimited PTO" (usually means no minimum)
+   - "fast-paced environment" (often means overwork)
+   - "wearing multiple hats" (scope creep)
+   - "rockstar/ninja/guru" (toxic culture signal)
+   - "must be able to work under pressure"
+   - "competitive salary" without numbers
+
+5. GREEN FLAGS: Flag these if present:
+   - Specific salary range
+   - "work-life balance"
+   - Remote work option
+   - "well-funded" or specific funding mentioned
+   - Clear career progression
+   - "profitable" company
+
+6. ACCURACY: 
+   - If information is not clearly stated, use defaults (empty string, empty array, 0, false)
+   - Never hallucinate or assume information
+   - When in doubt, omit rather than guess
+
+OUTPUT: Only the JSON object. No code fences. No preamble.

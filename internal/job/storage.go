@@ -61,6 +61,11 @@ func migrate(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
+
+	// Add missing columns if they don't exist
+	db.Exec(`ALTER TABLE jobs ADD COLUMN scratch_email TEXT`)
+	db.Exec(`ALTER TABLE jobs ADD COLUMN custom_cv TEXT`)
+
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS history (
 			key TEXT PRIMARY KEY,

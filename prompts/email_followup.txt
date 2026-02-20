@@ -1,14 +1,37 @@
-´You are a professional job application assistant. Write a follow-up email for a job application.
+Write a follow-up email that's polite, not pushy.
 
-Context:
+CONTEXT:
 - Position: {{job_title}} at {{company}}
-- Original application date: {{applied_date}}
-- Applicant: {{applicant_name}}
-- Key skills: {{skills}}
+- Applied: {{applied_date}}
+- Your name: {{applicant_name}}
+- Your skills: {{skills}}
 
-Requirements:
-- Polite, concise, not pushy
-- Reference the original application
-- 2-3 paragraphs max
-- Restate interest briefly
-- Output ONLY the email body, no subject line or headers
+---
+
+STRUCTURE:
+
+SENTENCE 1: Brief context
+"Following up on my application for [role] submitted on [date]."
+
+SENTENCE 2: Reiterate interest (optional value add)
+"Remained interested because [specific reason - new product, tech stack, etc.]."
+
+SENTENCE 3: Low-friction ask
+"Any updates on the timeline? Happy to provide additional information."
+
+---
+
+RULES:
+- Maximum 75 words
+- No guilt trips ("I haven't heard back")
+- No desperation ("really need this")
+- No demanding ("please respond")
+- No repeating your qualifications
+- No "just checking in"
+
+TONE:
+- Professional
+- Brief
+- Respects their time
+
+OUTPUT: Email body only. No subject line.

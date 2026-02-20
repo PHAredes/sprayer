@@ -123,7 +123,10 @@ func (c *CLI) handleScrape() {
 	pipeline := job.Pipe(job.FlagTraps(), job.SanitizeDescriptions())
 	processed := pipeline(jobs)
 
-	c.store.Save(processed)
+	if err := c.store.Save(processed); err != nil {
+		fmt.Printf("Error saving jobs: %v\n", err)
+		return
+	}
 	c.store.SetLastScrape(cacheKey)
 	fmt.Printf("Saved %d jobs.\n", len(processed))
 }
