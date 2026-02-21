@@ -89,6 +89,7 @@ func CommonRSSFeeds() []job.Scraper {
 		{"golang-cafe", "https://golang.cafe/Ede/rss.xml"},
 		{"rustjobs", "https://rustjobs.dev/feed.xml"},
 		{"functional-works", "https://functional.works-hub.com/feed"},
+		{"pythonjobs", "https://pythonjobs.dev/feed.xml"},
 	}
 
 	var scrapers []job.Scraper
