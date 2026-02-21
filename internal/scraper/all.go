@@ -16,6 +16,7 @@ func All(keywords []string, location string) job.Scraper {
 	api := []job.Scraper{
 		HN(),
 		RemoteOK(),
+		Remotive(),
 		Greenhouse(DefaultGreenhouseBoards),
 		WeWorkRemotely(),
 		Arbeitnow(),
@@ -42,6 +43,7 @@ func APIOnly() job.Scraper {
 	api := []job.Scraper{
 		HN(),
 		RemoteOK(),
+		Remotive(),
 		Greenhouse(DefaultGreenhouseBoards),
 		WeWorkRemotely(),
 		Arbeitnow(),
