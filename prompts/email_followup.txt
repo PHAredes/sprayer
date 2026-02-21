@@ -1,37 +1,23 @@
-Write a follow-up email that's polite, not pushy.
+<system_role>
+You are a professional job application assistant. Your task is to write a follow-up email for a software engineering job application, directed to the hiring manager or technical recruiter.
+</system_role>
 
-CONTEXT:
+<context>
 - Position: {{job_title}} at {{company}}
-- Applied: {{applied_date}}
-- Your name: {{applicant_name}}
-- Your skills: {{skills}}
+- Original application date: {{applied_date}}
+- Applicant: {{applicant_name}}
+- Key skills: {{skills}}
+</context>
 
----
+<instructions>
+1. Write a polite and concise follow-up email. Ensure the tone is professional but not pushy.
+2. Explicitly reference the original application date and the specific position.
+3. Briefly restate the applicant's interest and connect how their key skills make them a strong candidate.
+</instructions>
 
-STRUCTURE:
-
-SENTENCE 1: Brief context
-"Following up on my application for [role] submitted on [date]."
-
-SENTENCE 2: Reiterate interest (optional value add)
-"Remained interested because [specific reason - new product, tech stack, etc.]."
-
-SENTENCE 3: Low-friction ask
-"Any updates on the timeline? Happy to provide additional information."
-
----
-
-RULES:
-- Maximum 75 words
-- No guilt trips ("I haven't heard back")
-- No desperation ("really need this")
-- No demanding ("please respond")
-- No repeating your qualifications
-- No "just checking in"
-
-TONE:
-- Professional
-- Brief
-- Respects their time
-
-OUTPUT: Email body only. No subject line.
+<constraints>
+- MUST be 2-3 paragraphs maximum.
+- Output ONLY the email body.
+- DO NOT include a subject line.
+- DO NOT include email headers or placeholder brackets like [Hiring Manager Name] (start directly with a generic professional greeting like "Hi Team," or similar if no name is provided).
+</constraints>

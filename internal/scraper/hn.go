@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"html"
 	"net/http"
 	"strings"
 	"time"
@@ -53,9 +52,9 @@ func HN() job.Scraper {
 
 			var commentsResult struct {
 				Hits []struct {
-					ObjectID    string `json:"objectID"`
+					ObjectID  string `json:"objectID"`
 					CommentText string `json:"comment_text"`
-					CreatedAt   string `json:"created_at"`
+					CreatedAt string `json:"created_at"`
 				} `json:"hits"`
 				NbPages int `json:"nbPages"`
 			}
@@ -151,6 +150,7 @@ func scoreHNJob(title, desc string) int {
 }
 
 func stripHTML(s string) string {
+	// Simple HTML tag stripper
 	var out strings.Builder
 	inTag := false
 	for _, r := range s {
@@ -166,7 +166,7 @@ func stripHTML(s string) string {
 			out.WriteRune(r)
 		}
 	}
-	return html.UnescapeString(strings.TrimSpace(out.String()))
+	return strings.TrimSpace(out.String())
 }
 
 func httpGet(url string) ([]byte, error) {

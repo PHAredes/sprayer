@@ -74,10 +74,12 @@ func (d *JobDetail) renderHeader() string {
 		return ""
 	}
 
+	// Job title and company
 	title := Styles.DetailTitle.Render(d.job.Title)
 	company := Styles.Subtitle.Render(fmt.Sprintf("🏢 %s", d.job.Company))
 	location := Styles.MutedText.Render(fmt.Sprintf("📍 %s", d.job.Location))
 
+	// Score and metadata
 	scoreColor := Colors.Success
 	if d.job.Score < 60 {
 		scoreColor = Colors.Warning
@@ -91,14 +93,10 @@ func (d *JobDetail) renderHeader() string {
 		Bold(true).
 		Render(fmt.Sprintf("⭐ Score: %d/100", d.job.Score))
 
+	// Trap indicator
 	trapIndicator := ""
 	if d.job.HasTraps {
 		trapIndicator = Styles.ErrorText.Render("⚠️  Contains application traps")
-	}
-
-	appliedIndicator := ""
-	if d.job.Applied {
-		appliedIndicator = Styles.SuccessText.Render(fmt.Sprintf("✓ Applied %s", d.job.AppliedDate.Format("Jan 2, 2006")))
 	}
 
 	header := lipgloss.JoinVertical(lipgloss.Left,
@@ -106,7 +104,7 @@ func (d *JobDetail) renderHeader() string {
 		company,
 		location,
 		"",
-		lipgloss.JoinHorizontal(lipgloss.Top, score, "  ", trapIndicator, "  ", appliedIndicator),
+		lipgloss.JoinHorizontal(lipgloss.Top, score, "  ", trapIndicator),
 	)
 
 	return Styles.Card.Width(d.width).Render(header)
@@ -164,12 +162,7 @@ func (d *JobDetail) updateContent() {
 func (d *JobDetail) formatJobContent() string {
 	var sections []string
 
-	if d.job.ScratchEmail != "" {
-		scratchSection := Styles.ListTitle.Render("Scratch Email")
-		scratchContent := Styles.SuccessText.Render(fmt.Sprintf("📧 %s", d.job.ScratchEmail))
-		sections = append(sections, lipgloss.JoinVertical(lipgloss.Left, scratchSection, scratchContent))
-	}
-
+	// Description section
 	if d.job.Description != "" {
 		descTitle := Styles.ListTitle.Render("Description")
 		descContent := Styles.Content.Render(d.job.Description)

@@ -2,10 +2,10 @@ package job
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -19,9 +19,7 @@ type Store struct {
 // NewStore opens (or creates) the SQLite database.
 func NewStore() (*Store, error) {
 	dir := filepath.Join(os.Getenv("HOME"), ".sprayer")
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("create data directory: %w", err)
-	}
+	os.MkdirAll(dir, 0755)
 
 	db, err := sql.Open("sqlite3", filepath.Join(dir, "sprayer.db"))
 	if err != nil {
@@ -54,18 +52,11 @@ func migrate(db *sql.DB) error {
 			traps       TEXT,
 			applied     BOOLEAN DEFAULT 0,
 			applied_date DATETIME,
-			scratch_email TEXT,
-			custom_cv   TEXT,
 			created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`)
 	if err != nil {
 		return err
 	}
-
-	// Add missing columns if they don't exist
-	db.Exec(`ALTER TABLE jobs ADD COLUMN scratch_email TEXT`)
-	db.Exec(`ALTER TABLE jobs ADD COLUMN custom_cv TEXT`)
-
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS history (
 			key TEXT PRIMARY KEY,
@@ -84,8 +75,8 @@ func (s *Store) Save(jobs []Job) error {
 
 	stmt, err := tx.Prepare(`
 		INSERT OR REPLACE INTO jobs
-		(id, title, company, location, description, url, source, posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date, scratch_email, custom_cv)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+		(id, title, company, location, description, url, source, posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return err
 	}
@@ -95,7 +86,7 @@ func (s *Store) Save(jobs []Job) error {
 		traps := strings.Join(j.Traps, ",")
 		_, err := stmt.Exec(j.ID, j.Title, j.Company, j.Location, j.Description,
 			j.URL, j.Source, j.PostedDate, j.Salary, j.JobType, j.Email,
-			j.Score, j.HasTraps, traps, j.Applied, j.AppliedDate, j.ScratchEmail, j.CustomCV)
+			j.Score, j.HasTraps, traps, j.Applied, j.AppliedDate)
 		if err != nil {
 			return err
 		}
@@ -104,10 +95,11 @@ func (s *Store) Save(jobs []Job) error {
 	return tx.Commit()
 }
 
+// All returns every job in the database.
 func (s *Store) All() ([]Job, error) {
 	rows, err := s.DB.Query(`
 		SELECT id, title, company, location, description, url, source,
-		       posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date, scratch_email, custom_cv
+		       posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date
 		FROM jobs ORDER BY score DESC`)
 	if err != nil {
 		return nil, err
@@ -117,17 +109,18 @@ func (s *Store) All() ([]Job, error) {
 	return scanJobs(rows)
 }
 
+// ByID returns a single job.
 func (s *Store) ByID(id string) (*Job, error) {
 	row := s.DB.QueryRow(`
 		SELECT id, title, company, location, description, url, source,
-		       posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date, scratch_email, custom_cv
+		       posted_date, salary, job_type, email, score, has_traps, traps, applied, applied_date
 		FROM jobs WHERE id = ?`, id)
 
 	var j Job
 	var trapsStr string
 	err := row.Scan(&j.ID, &j.Title, &j.Company, &j.Location, &j.Description,
 		&j.URL, &j.Source, &j.PostedDate, &j.Salary, &j.JobType, &j.Email,
-		&j.Score, &j.HasTraps, &trapsStr, &j.Applied, &j.AppliedDate, &j.ScratchEmail, &j.CustomCV)
+		&j.Score, &j.HasTraps, &trapsStr, &j.Applied, &j.AppliedDate)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +137,7 @@ func scanJobs(rows *sql.Rows) ([]Job, error) {
 		var trapsStr string
 		err := rows.Scan(&j.ID, &j.Title, &j.Company, &j.Location, &j.Description,
 			&j.URL, &j.Source, &j.PostedDate, &j.Salary, &j.JobType, &j.Email,
-			&j.Score, &j.HasTraps, &trapsStr, &j.Applied, &j.AppliedDate, &j.ScratchEmail, &j.CustomCV)
+			&j.Score, &j.HasTraps, &trapsStr, &j.Applied, &j.AppliedDate)
 		if err != nil {
 			return nil, err
 		}
@@ -172,16 +165,7 @@ func (s *Store) SetLastScrape(key string) error {
 	return err
 }
 
+// Close closes the database.
 func (s *Store) Close() error {
 	return s.DB.Close()
-}
-
-func (s *Store) UpdateJobScratchEmail(jobID, scratchEmail string) error {
-	_, err := s.DB.Exec(`UPDATE jobs SET scratch_email = ? WHERE id = ?`, scratchEmail, jobID)
-	return err
-}
-
-func (s *Store) MarkApplied(jobID string) error {
-	_, err := s.DB.Exec(`UPDATE jobs SET applied = 1, applied_date = ? WHERE id = ?`, time.Now(), jobID)
-	return err
 }

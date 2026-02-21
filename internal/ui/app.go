@@ -3,16 +3,13 @@ package ui
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"sprayer/internal/apply"
 	"sprayer/internal/job"
-	"sprayer/internal/llm"
 	"sprayer/internal/profile"
 	"sprayer/internal/scraper"
 )
@@ -33,23 +30,18 @@ type App struct {
 	activeProfile profile.Profile
 
 	// Components
-	header          *Header
-	footer          *Footer
-	jobList         *SimpleJobList
-	jobDetail       *JobDetail
-	filterView      *FilterView
-	profileView     *ProfileView
-	profileForm     *ProfileForm
-	scraper         *ScraperView
-	helpView        help.Model
-	applyConfirm    *ApplyConfirmView
-	pendingApplyJob *job.Job
-	emailComposer   *EmailComposer
+	header      *Header
+	footer      *Footer
+	jobList     *SimpleJobList
+	jobDetail   *JobDetail
+	filterView  *FilterView
+	profileView *ProfileView
+	scraper     *ScraperView
+	helpView    help.Model
 
 	// Dependencies
 	store        *job.Store
 	profileStore *profile.Store
-	llmClient    *llm.Client
 
 	// Current scraping state
 	currentScraper *scraper.IncrementalScraper
@@ -64,12 +56,8 @@ const (
 	ModeJobDetail
 	ModeFilters
 	ModeProfiles
-	ModeProfileForm
 	ModeScraping
 	ModeHelp
-	ModeApplyConfirm
-	ModeApplying
-	ModeEmailComposer
 )
 
 // NewApp creates a new TUI application
@@ -105,19 +93,17 @@ func NewApp() (*App, error) {
 		profiles:     profiles,
 		store:        jobStore,
 		profileStore: profileStore,
-		llmClient:    llm.NewClient(),
 	}
 
+	// Initialize components
 	app.header = &Header{}
 	app.footer = &Footer{}
 	app.jobList = &SimpleJobList{jobs: jobs}
 	app.jobDetail = NewJobDetail()
 	app.filterView = NewFilterView(activeProfile)
 	app.profileView = NewProfileView(profiles, activeProfile)
-	app.profileForm = NewProfileForm(profileStore)
 	app.scraper = NewScraperView()
 	app.helpView = help.New()
-	app.applyConfirm = NewApplyConfirmView()
 
 	return app, nil
 }
@@ -168,8 +154,6 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a.updateFilters(msg)
 		case ModeProfiles:
 			return a.updateProfiles(msg)
-		case ModeProfileForm:
-			return a.updateProfileForm(msg)
 		case ModeScraping:
 			return a.updateScraping(msg)
 		case ModeHelp:
@@ -177,12 +161,6 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.state = ModeJobs
 			}
 			return a, nil
-		case ModeApplyConfirm:
-			return a.updateApplyConfirm(msg)
-		case ModeApplying:
-			return a, nil
-		case ModeEmailComposer:
-			return a.updateEmailComposer(msg)
 		}
 
 	case AppScraperProgressMsg:
@@ -228,107 +206,19 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if a.scraper != nil {
 			a.scraper.SetError(msg.Error)
 		}
-		// Show error in status for better visibility
-		errorMsg := msg.Error.Error()
-		if len(errorMsg) > 80 {
-			errorMsg = errorMsg[:77] + "..."
-		}
-		a.setStatus(fmt.Sprintf("⚠️  Scraping error: %s", errorMsg))
+		// Also show error in status for better visibility
+		a.setStatus(fmt.Sprintf("Scraping error: %v", msg.Error))
 		return a, nil
 
 	case FiltersAppliedMsg:
+		// Apply filters and return to job list
 		a.activeProfile = msg.Profile
 		a.state = ModeJobs
+
+		// Apply filtering to job list
 		a.applyFilters()
-		return a, nil
 
-	case ProfileCreatedMsg:
-		a.profiles, _ = a.profileStore.All()
-		a.activeProfile = msg.Profile
-		a.profileView = NewProfileView(a.profiles, a.activeProfile)
-		a.applyFilters()
-		a.profileForm.Reset()
-		a.state = ModeProfiles
-		a.setStatus(fmt.Sprintf("Profile '%s' created", msg.Profile.Name))
 		return a, nil
-
-	case ProfileUpdatedMsg:
-		a.profiles, _ = a.profileStore.All()
-		if a.activeProfile.ID == msg.Profile.ID {
-			a.activeProfile = msg.Profile
-		}
-		a.profileView = NewProfileView(a.profiles, a.activeProfile)
-		a.applyFilters()
-		a.profileForm.Reset()
-		a.state = ModeProfiles
-		a.setStatus(fmt.Sprintf("Profile '%s' updated", msg.Profile.Name))
-		return a, nil
-
-	case ProfileDeletedMsg:
-		a.profiles, _ = a.profileStore.All()
-		if len(a.profiles) == 0 {
-			a.activeProfile = profile.NewDefaultProfile()
-			a.profileStore.Save(a.activeProfile)
-			a.profiles = []profile.Profile{a.activeProfile}
-		} else if a.activeProfile.ID == msg.Profile.ID {
-			a.activeProfile = a.profiles[0]
-		}
-		a.profileView = NewProfileView(a.profiles, a.activeProfile)
-		a.applyFilters()
-		a.profileForm.Reset()
-		a.state = ModeProfiles
-		a.setStatus(fmt.Sprintf("Profile '%s' deleted", msg.Profile.Name))
-		return a, nil
-
-	case ProfileImportedMsg:
-		a.profiles, _ = a.profileStore.All()
-		a.profileView = NewProfileView(a.profiles, a.activeProfile)
-		a.profileForm.Reset()
-		a.state = ModeProfiles
-		a.setStatus(fmt.Sprintf("Profile '%s' imported", msg.Profile.Name))
-		return a, nil
-
-	case ProfileErrorMsg:
-		a.setStatus(fmt.Sprintf("Error: %v", msg.Err))
-		a.profileForm.Reset()
-		a.state = ModeProfiles
-		return a, nil
-
-	case ProfileOperationCancelledMsg:
-		a.profileForm.Reset()
-		a.state = ModeProfiles
-		a.setStatus("Operation cancelled")
-		return a, nil
-
-	case AppApplySuccessMsg:
-		a.setStatus(fmt.Sprintf("✓ Application created for %s @ %s", msg.Job.Title, msg.Job.Company))
-		a.state = ModeJobs
-		a.pendingApplyJob = nil
-		a.refreshJobList()
-		if a.jobDetail != nil && a.jobDetail.job != nil && a.jobDetail.job.ID == msg.Job.ID {
-			a.jobDetail.SetJob(&msg.Job)
-		}
-		return a, nil
-
-	case AppApplyErrorMsg:
-		errMsg := msg.Error.Error()
-		if len(errMsg) > 100 {
-			errMsg = errMsg[:97] + "..."
-		}
-		a.setStatus(fmt.Sprintf("✗ Application failed: %s", errMsg))
-		a.state = ModeJobs
-		a.pendingApplyJob = nil
-		return a, nil
-
-	case AppOpenEmailComposerMsg:
-		composer := NewEmailComposer(msg.Job, a.activeProfile, msg.Body)
-		composer.subjectInput.SetValue(msg.Subject)
-		composer.SetDraft(msg.Draft)
-		composer.SetSize(a.width, a.height-2)
-		composer.updateFocus()
-		a.emailComposer = composer
-		a.state = ModeEmailComposer
-		return a, composer.Init()
 	}
 
 	// Update components
@@ -371,7 +261,8 @@ func (a *App) updateJobs(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Apply to selected job
 		selectedJob := a.jobList.SelectedJob()
 		if selectedJob != nil {
-			return a, a.startApplication(selectedJob)
+			fmt.Printf("Applying to job: %s @ %s\n", selectedJob.Title, selectedJob.Company)
+			// TODO: Implement actual application logic
 		}
 		return a, nil
 	}
@@ -387,11 +278,13 @@ func (a *App) updateJobDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		a.state = ModeJobs
 		return a, nil
 	case "a":
-		if a.jobDetail != nil && a.jobDetail.job != nil {
-			return a, a.startApplication(a.jobDetail.job)
+		// Apply to job
+		if a.jobList.SelectedJob() != nil {
+			fmt.Println("Applying to job...") // TODO: Implement application
 		}
 	}
 
+	// Update job detail component
 	if a.jobDetail != nil {
 		cmd := a.jobDetail.Update(msg)
 		return a, cmd
@@ -426,52 +319,21 @@ func (a *App) updateProfiles(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		a.state = ModeJobs
 		return a, nil
 	case "enter":
-		if a.profileView != nil {
-			selectedProfile := a.profileView.SelectedProfile()
-			a.activeProfile = selectedProfile
-			a.applyFilters()
-		}
+		// Select profile
 		a.state = ModeJobs
 		return a, nil
 	case "n":
-		a.state = ModeProfileForm
-		return a, a.profileForm.StartCreate()
-	case "e":
-		if a.profileView != nil && len(a.profiles) > 0 {
-			a.state = ModeProfileForm
-			return a, a.profileForm.StartEdit(a.profileView.SelectedProfile())
-		}
+		// New profile
+		fmt.Println("Creating new profile...") // TODO: Implement profile creation
 		return a, nil
-	case "d":
-		if a.profileView != nil && len(a.profiles) > 1 {
-			a.state = ModeProfileForm
-			return a, a.profileForm.StartDeleteConfirm(a.profileView.SelectedProfile())
-		}
-		return a, nil
-	case "i":
-		a.state = ModeProfileForm
-		return a, a.profileForm.StartImport()
 	}
 
+	// Update profile view
 	if a.profileView != nil {
 		cmd := a.profileView.Update(msg)
 		return a, cmd
 	}
 
-	return a, nil
-}
-
-func (a *App) updateProfileForm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if msg.String() == "esc" {
-		a.profileForm.Reset()
-		a.state = ModeProfiles
-		return a, nil
-	}
-
-	if a.profileForm != nil {
-		_, cmd := a.profileForm.Update(msg)
-		return a, cmd
-	}
 	return a, nil
 }
 
@@ -534,12 +396,14 @@ func (a *App) startScraping() (tea.Model, tea.Cmd) {
 
 func (a *App) monitorScraper(scraperInstance *scraper.IncrementalScraper) tea.Cmd {
 	return func() tea.Msg {
+		// Use a ticker-based approach to monitor scraper progress
 		ticker := time.NewTicker(100 * time.Millisecond)
 		defer ticker.Stop()
 
 		for {
 			select {
 			case <-ticker.C:
+				// Check for progress updates
 				select {
 				case progress, ok := <-scraperInstance.Progress():
 					if ok {
@@ -548,6 +412,7 @@ func (a *App) monitorScraper(scraperInstance *scraper.IncrementalScraper) tea.Cm
 				default:
 				}
 
+				// Check for job results
 				select {
 				case job, ok := <-scraperInstance.Results():
 					if ok {
@@ -556,6 +421,7 @@ func (a *App) monitorScraper(scraperInstance *scraper.IncrementalScraper) tea.Cm
 				default:
 				}
 
+				// Check if scraper is done
 				select {
 				case <-scraperInstance.Done():
 					return AppScraperCompleteMsg{}
@@ -567,158 +433,6 @@ func (a *App) monitorScraper(scraperInstance *scraper.IncrementalScraper) tea.Cm
 			}
 		}
 	}
-}
-
-func (a *App) startApplication(j *job.Job) tea.Cmd {
-	a.pendingApplyJob = j
-	a.applyConfirm.SetJob(j)
-	a.applyConfirm.SetOptions(
-		os.Getenv("SPRAYER_SEND_DIRECT") == "true",
-		a.activeProfile.CVPath != "" || a.activeProfile.CVData != nil,
-		a.llmClient.Available(),
-	)
-	a.state = ModeApplyConfirm
-	return nil
-}
-
-func (a *App) updateApplyConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	selected, confirmed := a.applyConfirm.Update(msg)
-	if confirmed {
-		switch selected {
-		case 0:
-			return a, a.executeApply(a.pendingApplyJob, false)
-		case 1:
-			return a, a.executeApply(a.pendingApplyJob, true)
-		default:
-			a.state = ModeJobs
-			a.pendingApplyJob = nil
-			return a, nil
-		}
-	}
-	return a, nil
-}
-
-func (a *App) executeApply(j *job.Job, sendDirect bool) tea.Cmd {
-	a.state = ModeApplying
-	a.setStatus(fmt.Sprintf("Generating application for %s @ %s...", j.Title, j.Company))
-
-	return func() tea.Msg {
-		if j.Email == "" {
-			return AppApplyErrorMsg{Error: fmt.Errorf("no email address for this job")}
-		}
-
-		if !a.llmClient.Available() {
-			return AppApplyErrorMsg{Error: fmt.Errorf("LLM not configured: set SPRAYER_LLM_KEY environment variable")}
-		}
-
-		cvGen := apply.NewCVGenerator(a.llmClient)
-		if cvGen.Available() && a.activeProfile.CVData != nil {
-			cvContent, err := cvGen.GenerateCustomCV(j, &a.activeProfile)
-			if err == nil && cvContent != "" {
-				cvDir := fmt.Sprintf("%s/.sprayer/cvs", os.Getenv("HOME"))
-				cvPath, err := apply.SaveCustomCV(cvContent, j.ID, cvDir)
-				if err == nil {
-					j.CustomCV = cvPath
-				}
-			}
-		}
-
-		subject, body, err := apply.GenerateEmail(*j, a.activeProfile, a.llmClient, "application")
-		if err != nil {
-			return AppApplyErrorMsg{Error: fmt.Errorf("generate email: %w", err)}
-		}
-
-		emailClientType := apply.GetEmailClientType()
-		emailClient := apply.NewEmailClient(emailClientType)
-		draft, err := emailClient.CreateDraft(*j, a.activeProfile, subject, body)
-		if err != nil {
-			return AppApplyErrorMsg{Error: fmt.Errorf("create draft: %w", err)}
-		}
-
-		if emailClientType == apply.ClientTUI {
-			return AppOpenEmailComposerMsg{
-				Job:     j,
-				Draft:   draft,
-				Subject: subject,
-				Body:    body,
-			}
-		}
-
-		if sendDirect {
-			if err := emailClient.Send(draft); err != nil {
-				return AppApplyErrorMsg{Error: fmt.Errorf("send email: %w", err)}
-			}
-		} else {
-			if err := emailClient.OpenDraft(draft); err != nil {
-				return AppApplyErrorMsg{Error: fmt.Errorf("open draft: %w", err)}
-			}
-		}
-
-		j.Applied = true
-		j.AppliedDate = time.Now()
-		if err := a.store.Save([]job.Job{*j}); err != nil {
-			return AppApplyErrorMsg{Error: fmt.Errorf("save job status: %w", err)}
-		}
-
-		return AppApplySuccessMsg{
-			Job:       *j,
-			DraftPath: draft.DraftPath,
-			Subject:   subject,
-		}
-	}
-}
-
-func (a *App) updateEmailComposer(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if a.emailComposer == nil {
-		a.state = ModeJobs
-		return a, nil
-	}
-
-	m, cmd := a.emailComposer.Update(msg)
-	if m != nil {
-		a.emailComposer = m.(*EmailComposer)
-	}
-
-	result := a.emailComposer.Result()
-	if result.Action != ActionCancel || result.Cancelled {
-		if result.Action == ActionSend && result.Draft != nil {
-			return a, a.sendEmailFromComposer(result.Draft)
-		}
-		a.state = ModeJobs
-		a.emailComposer = nil
-	}
-
-	return a, cmd
-}
-
-func (a *App) sendEmailFromComposer(draft *apply.EmailDraft) tea.Cmd {
-	return func() tea.Msg {
-		emailClient := apply.NewEmailClient(apply.ClientSMTP)
-		if err := emailClient.Send(draft); err != nil {
-			return AppApplyErrorMsg{Error: fmt.Errorf("send email: %w", err)}
-		}
-
-		if a.pendingApplyJob != nil {
-			a.pendingApplyJob.Applied = true
-			a.pendingApplyJob.AppliedDate = time.Now()
-			if err := a.store.Save([]job.Job{*a.pendingApplyJob}); err != nil {
-				return AppApplyErrorMsg{Error: fmt.Errorf("save job status: %w", err)}
-			}
-			return AppApplySuccessMsg{
-				Job:       *a.pendingApplyJob,
-				DraftPath: draft.DraftPath,
-				Subject:   draft.Subject,
-			}
-		}
-
-		return AppApplySuccessMsg{Subject: draft.Subject}
-	}
-}
-
-func (a *App) refreshJobList() {
-	jobs, _ := a.store.All()
-	a.jobs = jobs
-	a.applyFilters()
 }
 
 func (a *App) resizeComponents() {
@@ -760,38 +474,14 @@ func (a *App) View() string {
 		}
 	case ModeProfiles:
 		if a.profileView != nil {
-			content = a.profileView.View(a.width, a.height-2)
+			content = a.profileView.View(a.width, a.height-2) // Account for header/footer
 		} else {
 			content = "Profile view not available"
-		}
-	case ModeProfileForm:
-		if a.profileForm != nil {
-			a.profileForm.SetSize(a.width, a.height-2)
-			content = a.profileForm.View()
-		} else {
-			content = "Profile form not available"
 		}
 	case ModeScraping:
 		content = a.scraper.View()
 	case ModeHelp:
 		return a.renderHelp()
-	case ModeApplyConfirm:
-		a.applyConfirm.SetSize(a.width, a.height-2)
-		content = a.applyConfirm.View()
-	case ModeApplying:
-		applyingStyle := lipgloss.NewStyle().
-			Foreground(Colors.Accent).
-			Bold(true).
-			Align(lipgloss.Center).
-			Width(a.width).
-			Height(a.height - 2)
-		content = applyingStyle.Render("Generating application...\n\nPlease wait...")
-	case ModeEmailComposer:
-		if a.emailComposer != nil {
-			content = a.emailComposer.View()
-		} else {
-			content = "Email composer not available"
-		}
 	}
 
 	// Build full layout with header, content, status, and footer
@@ -986,25 +676,9 @@ type (
 		Error error
 	}
 
+	// Message from filter view
 	FiltersAppliedMsg struct {
 		Profile profile.Profile
-	}
-
-	AppApplySuccessMsg struct {
-		Job       job.Job
-		DraftPath string
-		Subject   string
-	}
-
-	AppApplyErrorMsg struct {
-		Error error
-	}
-
-	AppOpenEmailComposerMsg struct {
-		Job     *job.Job
-		Draft   *apply.EmailDraft
-		Subject string
-		Body    string
 	}
 )
 

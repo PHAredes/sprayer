@@ -21,12 +21,10 @@ type ExtractFn func(page *rod.Page) ([]job.Job, error)
 // returns a Scraper. The browser is shared across calls.
 func BrowserScrape(url string, extract ExtractFn) job.Scraper {
 	return func() ([]job.Job, error) {
-		launcherObj := launcher.New().Headless(true)
-		l, err := launcherObj.Launch()
+		l, err := launcher.New().Headless(true).Launch()
 		if err != nil {
 			return nil, fmt.Errorf("launch browser: %w", err)
 		}
-		defer launcherObj.Kill()
 
 		browser := rod.New().ControlURL(l)
 		if err := browser.Connect(); err != nil {
@@ -67,9 +65,8 @@ func LinkedIn(keywords []string, location string) job.Scraper {
 	)
 
 	return BrowserScrape(url, func(page *rod.Page) ([]job.Job, error) {
-		if err := page.WaitStable(5 * time.Second); err != nil {
-			return nil, fmt.Errorf("wait stable: %w", err)
-		}
+		// Wait for job cards to load
+		page.MustWaitStable()
 
 		// Extract job cards from LinkedIn's public job search
 		elements, err := page.Elements(".base-card")
@@ -94,7 +91,7 @@ func LinkedIn(keywords []string, location string) job.Scraper {
 			if loc != nil {
 				locText, _ = loc.Text()
 			}
-
+			
 			href := ""
 			if link != nil {
 				h, _ := link.Attribute("href")

@@ -80,8 +80,7 @@ Commands:
 
 func (c *CLI) handleScrape() {
 	fs := flag.NewFlagSet("scrape", flag.ExitOnError)
-	fast := fs.Bool("fast", false, "Use only reliable API scrapers (recommended)")
-	all := fs.Bool("all", false, "Use all API scrapers (may have issues)")
+	fast := fs.Bool("fast", false, "Skip browser-based scrapers (API only)")
 	force := fs.Bool("force", false, "Force scrape even if recently run")
 
 	// Parse flags first
@@ -105,12 +104,10 @@ func (c *CLI) handleScrape() {
 	}
 
 	var s job.Scraper
-	if *all {
-		s = scraper.APIOnly() // All API scrapers
-	} else if *fast {
-		s = scraper.APIOnlyReliable() // Only reliable API scrapers
+	if *fast {
+		s = scraper.APIOnly()
 	} else {
-		s = scraper.All(keywords, "Remote") // Full scraping with browser
+		s = scraper.All(keywords, "Remote")
 	}
 
 	jobs, err := s()
@@ -123,10 +120,7 @@ func (c *CLI) handleScrape() {
 	pipeline := job.Pipe(job.FlagTraps(), job.SanitizeDescriptions())
 	processed := pipeline(jobs)
 
-	if err := c.store.Save(processed); err != nil {
-		fmt.Printf("Error saving jobs: %v\n", err)
-		return
-	}
+	c.store.Save(processed)
 	c.store.SetLastScrape(cacheKey)
 	fmt.Printf("Saved %d jobs.\n", len(processed))
 }

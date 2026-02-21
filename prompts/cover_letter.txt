@@ -1,83 +1,27 @@
-Write a cover letter that sounds like it came from a human, not an AI.
+<system_role>
+You are an expert technical career coach and resume writer. Write a highly personalized, compelling cover letter for the position described in the context below. Focus on creating a strong narrative that connects the applicant's existing skills and experience with the company's needs.
+</system_role>
 
-POSITION:
+<context>
 - Role: {{job_title}} at {{company}}
 - Location: {{location}}
+- Job Description: {{job_description}}
+- Applicant Name: {{applicant_name}}
+- Applicant Key Skills: {{skills}}
+- Applicant Experience Summary: {{experience}}
+</context>
 
-REQUIREMENTS FROM POSTING:
-{{requirements}}
+<instructions>
+1. First, take a moment to silently analyze the job description and the applicant's key skills to identify the most relevant overlap.
+2. Introduction: Start with a strong, attention-grabbing opening. Connect a recent achievement or a specific skill directly to the company's mission or a challenge mentioned in the JD.
+3. Value Proposition: Frame the applicant's experience in terms of outcomes and metrics. Use active verbs.
+4. Culture Fit: Mention specific aspects of the company (tech stack, values, or recent news if provided) that align with the applicant's career goals.
+5. Professional Voice: Sound like a confident senior engineer—conversational yet professional. Avoid generic corporate speak, clichés (e.g., "fast learner", "passionate"), and "I am writing to..." openings.
+6. Body Structure: Consist of 3-4 concise paragraphs.
+</instructions>
 
-YOUR MATCHING SKILLS:
-{{matched_tech}}
-
-YOUR PROFILE:
-- Name: {{applicant_name}}
-- Title: {{applicant_title}}
-- Key Technologies: {{technologies}}
-- Skills: {{skills}}
-- Experience: {{experience}}
-- Education: {{education}}
-- Achievements: {{achievements}}
-- Projects: {{notable_projects}}
-
-FULL JOB DESCRIPTION:
-{{job_description}}
-
----
-
-STRUCTURE:
-
-PARAGRAPH 1 - THE HOOK (2-3 sentences)
-Don't start with "I am writing to apply." Start with something specific:
-- A recent company announcement, product launch, or technical challenge they're solving
-- A connection between their tech stack and your specific experience
-- Something you genuinely find interesting about their work
-
-Example openings:
-- "Your migration from monolith to microservices caught my attention - I led a similar transition at [company], reducing deployment time from 2 hours to 8 minutes."
-- "After reading about [company]'s expansion into [market], I noticed you're looking for engineers who understand both [tech A] and [tech B]."
-
-PARAGRAPH 2 - THE EVIDENCE (3-4 sentences)
-- Pick ONE relevant achievement from your experience
-- Include specific metrics: scale, performance, team size, timeline
-- Connect it directly to something in the job description
-- Use active voice: "I built", "I led", "I reduced"
-
-Example: "At [company], I built the real-time notification system handling 50k concurrent connections. It reduced API calls by 40% and became the foundation for our mobile push infrastructure. I see you're tackling similar scalability challenges with your WebSocket architecture."
-
-PARAGRAPH 3 - THE CLOSE (1-2 sentences)
-- Brief connection to why this role specifically
-- Natural sign-off, not "Thank you for your consideration"
-
-Example: "I'd love to discuss how my experience with distributed systems could contribute to your platform team."
-
----
-
-WRITING RULES:
-
-FORBIDDEN PHRASES:
-- "I am writing to express my interest"
-- "I am excited about the opportunity"
-- "I believe I would be a great fit"
-- "I am passionate about"
-- "fast learner"
-- "team player"
-- "detail-oriented"
-- "results-driven"
-- "think outside the box"
-- "hit the ground running"
-- "proven track record"
-- "synergy"
-- "leverage"
-- Any sentence starting with "I am" or "I have"
-
-STYLE:
-- Maximum 300 words
-- Professional but human
-- Specific over generic
-- Numbers over adjectives
-- Active voice
-- Short sentences
-- No corporate speak
-
-OUTPUT: Cover letter body only. No headers, dates, or signature blocks.
+<constraints>
+- Output ONLY the body of the cover letter.
+- DO NOT include address blocks, contact information headers, or the date.
+- DO NOT hallucinate or invent achievements. Only use what is provided in the applicant's experience summary.
+</constraints>

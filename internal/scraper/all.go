@@ -42,21 +42,11 @@ func APIOnly() job.Scraper {
 	api := []job.Scraper{
 		HN(),
 		RemoteOK(),
-		// Greenhouse(DefaultGreenhouseBoards), // Temporarily disabled due to hanging
+		Greenhouse(DefaultGreenhouseBoards),
 		WeWorkRemotely(),
 		Arbeitnow(),
 		Jobicy(),
 	}
 	api = append(api, CommonRSSFeeds()...)
 	return job.Merge(api...)
-}
-
-// APIOnlyReliable returns only the most reliable API sources that are known to work well.
-func APIOnlyReliable() job.Scraper {
-	return job.Merge(
-		HN(),
-		RemoteOK(),
-		WeWorkRemotely(),
-		Arbeitnow(),
-	)
 }
