@@ -19,3 +19,9 @@ outputs/
 .gemini/
 gha-creds-*.json
 .aider*
+
+# air
+tmp/
+
+# reference
+tui.html

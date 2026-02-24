@@ -54,8 +54,6 @@ func (c *CLI) Run() {
 		c.handleProfile()
 	case "setup":
 		c.handleSetup()
-	case "tui":
-		c.handleTUI()
 	default:
 		c.printUsage()
 	}
@@ -74,8 +72,7 @@ Commands:
   list     List and filter jobs (pipeable)
   apply    Apply to a specific job (generates draft)
    profile  Manage profiles
-   setup    Configure SMTP and LLM settings
-   tui      Launch interactive terminal UI`)
+   setup    Configure SMTP and LLM settings`)
 }
 
 func (c *CLI) handleScrape() {
@@ -222,15 +219,5 @@ func (c *CLI) handleProfile() {
 	profiles, _ := c.profileStore.All()
 	for _, p := range profiles {
 		fmt.Printf("- %s (%s)\n", p.Name, p.ID)
-	}
-}
-
-func (c *CLI) handleTUI() {
-	fmt.Println("Starting enhanced TUI...")
-
-	// Initialize the new TUI
-	if err := InitializeTUI(); err != nil {
-		fmt.Printf("Error running TUI: %v\n", err)
-		return
 	}
 }

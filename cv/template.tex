@@ -1,128 +1,1070 @@
-\documentclass[10pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[margin=1.2cm]{geometry}
-\usepackage{lmodern} % Computer Modern improved
-\usepackage{xcolor}
-\usepackage{hyperref}
-\usepackage{enumitem}
-\usepackage{titlesec}
-\usepackage{parskip}
-\usepackage{microtype} % Melhora a tipografia e justificação
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprayer — TUI Redesign v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap');
 
-% Remove page numbers
-\pagestyle{empty}
+:root {
+  --bg:      #0e0e0e;
+  --surface: #161616;
+  --surf2:   #1c1c1c;
+  --border:  #2a2a2a;
+  --muted:   #444;
+  --subtle:  #686868;
+  --text:    #c8c8c8;
+  --bright:  #f0f0f0;
+  --dim:     #3a3a3a;
+  --yellow:  #f0c060;
+  --green:   #50e3a4;
+  --cyan:    #4cc9f0;
+  --purple:  #a78bfa;
+  --acc:     #7b61ff;
 
-% Colors from CSS
-\definecolor{linkblue}{HTML}{0066cc}
-\definecolor{textblack}{HTML}{000000}
-\definecolor{headergray}{HTML}{333333}
-\definecolor{subtitlegray}{HTML}{555555}
+  --sp-xs: clamp(3px,  0.4vw,  6px);
+  --sp-sm: clamp(6px,  0.8vw, 12px);
+  --sp-md: clamp(10px, 1.2vw, 20px);
+  --sp-lg: clamp(14px, 2vw,   28px);
 
-% Hyperlink setup
-\hypersetup{
-    colorlinks=true,
-    linkcolor=linkblue,
-    urlcolor=linkblue,
-    pdftitle={Your Name - Job Title},
-    pdfauthor={Your Name}
+  --fs-xs: clamp(9px,  0.7vw, 11px);
+  --fs-sm: clamp(10px, 0.8vw, 12px);
+  --fs-md: clamp(11px, 0.9vw, 13px);
+  --fs-lg: clamp(12px, 1vw,   14px);
+
+  --bar-h:    clamp(22px, 2.8vh, 28px);
+  --status-h: clamp(20px, 2.4vh, 24px);
 }
 
-% Section formatting
-\titleformat{\section}
-  {\normalfont\large\bfseries\uppercase}{\thesection}{1em}{}[\titlerule]
-\titlespacing*{\section}{0pt}{10pt}{6pt}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-% Custom commands for layout
-\newcommand{\name}[1]{
-    \begin{center}
-        {\LARGE \textbf{\uppercase{#1}}}\\[2pt]
-    \end{center}
+body {
+  background: #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  font-family: 'IBM Plex Mono', monospace;
+  padding: var(--sp-lg);
+  gap: var(--sp-sm);
 }
 
-\newcommand{\jobtitle}[1]{
-    \begin{center}
-        {\large \textcolor{headergray}{#1}}\\[2pt]
-    \end{center}
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+  justify-content: center;
+}
+.tab {
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  padding: var(--sp-xs) var(--sp-md);
+  background: #111;
+  border: 1px solid var(--border);
+  color: #555;
+  cursor: pointer;
+  border-radius: 2px;
+  letter-spacing: .06em;
+  transition: color .15s, border-color .15s;
+}
+.tab:hover  { color: #999; border-color: #444; }
+.tab.active { background: var(--surf2); color: var(--cyan); border-color: var(--cyan); }
+
+/* ── TERMINAL ── */
+.terminal {
+  width: min(960px, 96vw);
+  height: min(560px, 80svh);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6);
 }
 
-\newcommand{\jobsubtitle}[1]{
-    \begin{center}
-        {\small \textcolor{subtitlegray}{#1}}\\[2pt]
-    \end{center}
+.screen { display: none; flex-direction: column; height: 100%; }
+.screen.active { display: flex; }
+
+/* ── TOPBAR ── */
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 var(--sp-md);
+  height: var(--bar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  gap: var(--sp-sm);
+}
+.topbar-left  { color: var(--subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-left span { color: var(--cyan); }
+.topbar-title { color: var(--bright); font-weight: 600; letter-spacing: .1em; text-align: center; white-space: nowrap; }
+.topbar-right { color: var(--subtle); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-right span { color: var(--yellow); }
+.topbar-right b { font-weight: 400; }
+
+/* ── STATUS BAR ── */
+.statusbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0 var(--sp-md);
+  min-height: var(--status-h);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  gap: var(--sp-sm);
+}
+.statusbar kbd { color: var(--cyan); font-family: inherit; }
+.statusbar .sep { color: var(--dim); }
+.sb-right { margin-left: auto; }
+
+/* ── CONTENT ── */
+.content { flex: 1; overflow: hidden; min-height: 0; }
+
+/* ═══════ EMPTY STATE ═══════ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--sp-sm);
+}
+.empty-ascii { color: var(--dim); font-size: var(--fs-xs); line-height: 1.35; text-align: center; }
+.empty-headline { color: var(--bright); font-size: var(--fs-lg); font-weight: 500; }
+.empty-sub { color: var(--subtle); font-size: var(--fs-sm); line-height: 1.9; text-align: center; }
+.empty-sub kbd {
+  color: var(--cyan);
+  background: rgba(76,201,240,.1);
+  border: 1px solid rgba(76,201,240,.2);
+  padding: 1px 5px; border-radius: 2px;
 }
 
-\newcommand{\contact}[1]{
-    \begin{center}
-        {\small #1}
-    \end{center}
+/* ═══════ FILTER ═══════ */
+.modal-topbar {
+  display: flex; align-items: center;
+  padding: 0 var(--sp-md); height: var(--bar-h);
+  background: var(--surf2); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; font-size: var(--fs-xs); gap: var(--sp-sm);
 }
+.modal-title { color: var(--bright); font-weight: 600; font-size: var(--fs-sm); flex: 1; }
+.modal-hint  { color: var(--muted); white-space: nowrap; }
+.modal-hint b { color: var(--subtle); font-weight: 400; }
 
-\newcommand{\tech}[1]{\textbf{#1}}
-
-% Entry header command
-\newcommand{\entry}[4]{
-    \noindent\textbf{#1} --- \textit{#2} \hfill #3\par
+.filter-body {
+  flex: 1; padding: var(--sp-md) var(--sp-lg);
+  display: flex; flex-direction: column; gap: var(--sp-xs); min-height: 0;
 }
-
-\begin{document}
-
-% Header
-\name{Your Name}
-\jobtitle{Software Engineer}
-\jobsubtitle{\tech{Skill 1} $\cdot$ \tech{Skill 2} $\cdot$ \tech{Skill 3}}
-
-\contact{
-    \href{mailto:email@example.com}{email@example.com} $\mid$
-    \href{https://linkedin.com/in/username}{linkedin.com/in/username} $\mid$
-    \href{https://github.com/username}{github.com/username} $\mid$
-    City, Country
+.field-row {
+  display: flex; align-items: center;
+  min-height: 30px; border-radius: 2px; padding: var(--sp-xs) var(--sp-sm);
 }
+.field-row.focused { background: rgba(123,97,255,.12); outline: 1px solid rgba(123,97,255,.35); }
+.field-label {
+  width: clamp(70px, 10%, 110px); color: var(--subtle); font-size: var(--fs-xs);
+  text-align: right; padding-right: var(--sp-md); flex-shrink: 0;
+}
+.field-row.focused .field-label { color: var(--purple); }
+.field-value { font-size: var(--fs-sm); color: var(--text); flex: 1; }
+.field-row.focused .field-value { color: var(--bright); }
+.cursor {
+  display: inline-block; width: 2px; height: 1em;
+  background: var(--purple); margin-left: 1px; vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
 
-\vspace{10pt}
+.filter-statusbar {
+  display: flex; align-items: center; flex-wrap: wrap;
+  padding: 0 var(--sp-md); min-height: var(--status-h);
+  background: var(--surface); border-top: 1px solid var(--border);
+  font-size: var(--fs-xs); color: var(--muted); gap: var(--sp-sm);
+}
+.filter-statusbar kbd { color: var(--cyan); font-family: inherit; }
+.filter-statusbar .sep { color: var(--dim); }
+.filter-profile { margin-left: auto; color: var(--subtle); }
+.filter-profile span { color: var(--green); }
 
-% Professional Summary
-\section*{Professional Summary}
-Summary of your experience and key achievements.
+/* ═══════ PROFILES ═══════ */
+.profiles-layout {
+  display: grid;
+  grid-template-columns: clamp(160px, 24%, 240px) 1fr;
+  height: 100%; overflow: hidden;
+}
+.profiles-list { border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.list-header {
+  padding: var(--sp-xs) var(--sp-md); font-size: var(--fs-xs);
+  text-transform: uppercase; letter-spacing: .1em; color: var(--muted);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.list-header span { color: var(--subtle); }
+.list-items { flex: 1; overflow-y: auto; }
+.profile-item { padding: var(--sp-sm) var(--sp-md); border-bottom: 1px solid rgba(42,42,42,.4); cursor: pointer; border-left: 2px solid transparent; }
+.profile-item.selected { background: rgba(123,97,255,.1); border-left-color: var(--purple); padding-left: calc(var(--sp-md) - 2px); }
+.profile-item-name { font-size: var(--fs-sm); color: var(--bright); display: flex; align-items: center; gap: var(--sp-xs); }
+.profile-item.selected .profile-item-name { color: var(--purple); }
+.active-badge { font-size: var(--fs-xs); color: var(--green); border: 1px solid rgba(80,227,164,.3); padding: 0 4px; border-radius: 2px; background: rgba(80,227,164,.08); }
+.profile-item-sub { font-size: var(--fs-xs); color: var(--muted); margin-top: 2px; }
+.profiles-detail { padding: var(--sp-md) var(--sp-lg); overflow-y: auto; }
+.detail-section { margin-bottom: var(--sp-lg); }
+.detail-section-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); border-bottom: 1px solid var(--border); padding-bottom: var(--sp-xs); margin-bottom: var(--sp-sm); }
+.detail-row { display: flex; font-size: var(--fs-sm); margin-bottom: var(--sp-xs); }
+.detail-key { color: var(--subtle); width: clamp(90px, 15%, 130px); flex-shrink: 0; }
+.detail-val { color: var(--text); }
+.detail-val.yes { color: var(--green); }
+.detail-val.no  { color: var(--muted); }
+.detail-val.ac  { color: var(--cyan); }
+.bar-row { display: flex; align-items: center; font-size: var(--fs-sm); margin-bottom: var(--sp-xs); gap: var(--sp-sm); }
+.bar-label { color: var(--subtle); width: clamp(70px,12%,100px); flex-shrink: 0; text-align: right; }
+.bar-track { flex: 1; height: 6px; background: var(--dim); border-radius: 1px; overflow: hidden; }
+.bar-fill  { height: 100%; background: linear-gradient(90deg, var(--acc), var(--purple)); border-radius: 1px; }
+.bar-pct   { color: var(--subtle); font-size: var(--fs-xs); width: 32px; text-align: right; }
 
-% Work Experience
-\section*{Work Experience}
+/* ═══════ HELP ═══════ */
+.help-body {
+  padding: var(--sp-md) var(--sp-lg); overflow-y: auto; flex: 1;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-md) var(--sp-lg); align-content: start;
+}
+.help-section-title {
+  font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .1em; color: var(--cyan);
+  margin-bottom: var(--sp-sm); padding-bottom: var(--sp-xs); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: var(--sp-sm);
+}
+.help-row { display: flex; align-items: baseline; font-size: var(--fs-sm); margin-bottom: var(--sp-xs); }
+.help-key {
+  min-width: 60px; flex-shrink: 0; color: var(--cyan);
+  background: rgba(76,201,240,.08); border: 1px solid rgba(76,201,240,.15);
+  text-align: center; border-radius: 2px; padding: 1px 0; font-size: var(--fs-xs); margin-right: var(--sp-sm);
+}
+.help-desc { color: var(--text); }
 
-\entry{Role Title}{Company Name}{Start – End}{}
-\begin{itemize}[leftmargin=*, noitemsep, topsep=0pt]
-    \item Key achievement or responsibility.
-    \item Another achievement.
-    \item \tech{Stack:} Tech 1, Tech 2, Tech 3.
-\end{itemize}
+/* ═══════ SCRAPE ═══════ */
+.scrape-body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: var(--sp-md); }
+.scrape-title { color: var(--bright); font-size: var(--fs-lg); font-weight: 500; display: flex; align-items: center; gap: var(--sp-sm); }
+.spinner { color: var(--purple); animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.progress-wrap { width: min(360px, 60%); }
+.progress-track { height: 8px; background: var(--dim); border-radius: 2px; overflow: hidden; margin-bottom: var(--sp-sm); }
+.progress-fill {
+  height: 100%; width: 67%;
+  background: linear-gradient(90deg, var(--acc), var(--purple)); border-radius: 2px;
+  position: relative; overflow: hidden;
+}
+.progress-fill::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+  transform: translateX(-100%); animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { to { transform: translateX(200%); } }
+.progress-meta { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--subtle); }
+.progress-meta .pct { color: var(--purple); font-size: var(--fs-md); font-weight: 500; }
+.scrape-sub { font-size: var(--fs-xs); color: var(--subtle); text-align: center; line-height: 2; }
+.scrape-sub span { color: var(--cyan); }
 
-\vspace{8pt}
+/* ═══════ EMAIL LIST ═══════ */
+.email-row {
+  display: flex; align-items: center;
+  padding: var(--sp-xs) var(--sp-md);
+  border-bottom: 1px solid rgba(42,42,42,.4);
+  border-left: 2px solid transparent;
+  gap: var(--sp-sm); cursor: pointer; min-height: 2.2rem;
+}
+.email-row:hover { background: rgba(255,255,255,.02); }
+.email-row.selected { background: rgba(76,201,240,.06); border-left-color: var(--cyan); padding-left: calc(var(--sp-md) - 2px); }
+.er-status { flex-shrink: 0; font-size: var(--fs-xs); width: 4em; }
+.er-status.draft { color: var(--yellow); }
+.er-status.sent  { color: var(--green); }
+.er-company { font-size: var(--fs-sm); color: var(--bright); width: clamp(5rem,18%,9rem); flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.email-row.selected .er-company { color: var(--cyan); }
+.er-subject { font-size: var(--fs-sm); color: var(--subtle); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.er-date { font-size: var(--fs-xs); color: var(--muted); flex-shrink: 0; }
 
-\entry{Previous Role}{Previous Company}{Start – End}{}
-\begin{itemize}[leftmargin=*, noitemsep, topsep=0pt]
-    \item Achievement.
-\end{itemize}
+/* ═══════ COMPOSE (pop-style) ═══════ */
+.pop-field {
+  display: flex; align-items: center;
+  padding: 0 var(--sp-md); min-height: 2rem;
+  border-bottom: 1px solid rgba(42,42,42,.5); font-size: var(--fs-sm);
+}
+.pop-field.active { background: rgba(123,97,255,.08); }
+.pop-lbl { width: clamp(3.5rem,8%,5rem); color: var(--muted); font-size: var(--fs-xs); text-align: right; padding-right: var(--sp-md); flex-shrink: 0; }
+.pop-field.active .pop-lbl { color: var(--purple); }
+.pop-val { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pop-field.active .pop-val { color: var(--bright); }
+.pop-body { flex: 1; padding: var(--sp-sm) var(--sp-lg); overflow-y: auto; font-size: var(--fs-sm); line-height: 1.9; color: var(--text); white-space: pre-wrap; }
+.pop-gen-hint { font-size: var(--fs-xs); color: var(--purple); padding: var(--sp-xs) var(--sp-lg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: var(--sp-xs); flex-shrink: 0; }
+.gen-pulse { width: 5px; height: 5px; border-radius: 50%; background: var(--purple); animation: gp .9s ease-in-out infinite; }
+@keyframes gp { 0%,100%{opacity:.3} 50%{opacity:1} }
 
-% Projects
-\section*{Projects}
+/* ═══════ CV IMPORT + FORM ═══════ */
+.cv-form-body {
+  flex: 1; overflow-y: auto;
+  padding: var(--sp-md) var(--sp-lg);
+  display: flex; flex-direction: column; gap: var(--sp-xs);
+}
+.cv-section-label {
+  font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted); padding: var(--sp-sm) 0 var(--sp-xs);
+  border-bottom: 1px solid var(--border); margin-bottom: var(--sp-xs);
+}
+.huh-field {
+  display: flex; align-items: flex-start;
+  min-height: 2rem; border-radius: 2px;
+  padding: var(--sp-xs) var(--sp-sm);
+  border-left: 2px solid transparent;
+}
+.huh-field.focused { background: rgba(123,97,255,.1); border-left-color: var(--purple); }
+.huh-label {
+  width: clamp(5.5rem, 13%, 8rem); font-size: var(--fs-xs); color: var(--subtle);
+  text-align: right; padding-right: var(--sp-md); flex-shrink: 0; padding-top: 3px;
+}
+.huh-field.focused .huh-label { color: var(--purple); }
+.huh-value { font-size: var(--fs-sm); color: var(--text); flex: 1; }
+.huh-field.focused .huh-value { color: var(--bright); }
+.huh-muted { color: var(--muted); }
+.huh-tag {
+  display: inline-block; font-size: var(--fs-xs);
+  color: var(--cyan); background: rgba(76,201,240,.08);
+  border: 1px solid rgba(76,201,240,.18); border-radius: 2px;
+  padding: 0 var(--sp-xs); margin: 1px 2px;
+}
+.huh-add {
+  display: inline-block; font-size: var(--fs-xs);
+  color: var(--muted); border: 1px dashed var(--dim); border-radius: 2px;
+  padding: 0 var(--sp-xs); margin: 1px 2px; cursor: pointer;
+}
+.huh-field.focused .huh-add { color: var(--purple); border-color: rgba(123,97,255,.4); }
+.huh-entry {
+  font-size: var(--fs-sm); color: var(--text);
+  padding: var(--sp-xs) 0;
+  border-bottom: 1px solid rgba(42,42,42,.4);
+  display: flex; align-items: baseline; gap: var(--sp-sm);
+}
+.huh-entry:last-of-type { border-bottom: none; }
+.huh-entry-role { color: var(--bright); flex-shrink: 0; }
+.huh-entry-co   { color: var(--cyan); flex: 1; }
+.huh-entry-date { color: var(--muted); font-size: var(--fs-xs); flex-shrink: 0; }
+.huh-entry-add  { color: var(--muted); font-size: var(--fs-xs); border: 1px dashed var(--dim); border-radius: 2px; padding: 0 var(--sp-xs); cursor: pointer; }
 
-\noindent\textbf{Project Name} \hfill \href{https://github.com/username/project}{GitHub}
-\vspace{-\parskip}
-\vspace{2pt}
-\begin{itemize}[leftmargin=12pt, noitemsep, topsep=0pt, labelsep=4pt]
-    \item Description of the project.
-\end{itemize}
+/* ═══════ CV WIZARD ═══════ */
+.cv-choice {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: var(--sp-md) var(--sp-sm);
+  border: 1px solid var(--border); border-radius: 3px;
+  gap: var(--sp-xs); cursor: pointer; text-align: center;
+  transition: all .15s;
+}
+.cv-choice:hover { border-color: var(--muted); }
+.cv-choice.selected { border-color: var(--purple); background: rgba(123,97,255,.08); }
+.cv-choice-icon { font-size: clamp(1.2rem,2.5vw,1.6rem); color: var(--muted); }
+.cv-choice.selected .cv-choice-icon { color: var(--purple); }
+.cv-choice-label { font-size: var(--fs-sm); color: var(--bright); font-weight: 500; }
+.cv-choice-sub { font-size: var(--fs-xs); color: var(--muted); line-height: 1.6; }
 
-% Technical Skills
-\section*{Technical Skills}
-\begin{itemize}[leftmargin=*, noitemsep, topsep=0pt]
-    \item \textbf{Languages:} List of languages.
-    \item \textbf{Stack:} List of frameworks/tools.
-\end{itemize}
+.cv-textarea {
+  flex: 1; font-family: inherit; font-size: var(--fs-sm);
+  color: var(--text); line-height: 1.9; white-space: pre-wrap;
+  border: 1px solid var(--border); border-radius: 2px;
+  padding: var(--sp-sm) var(--sp-md);
+  background: rgba(255,255,255,.02); outline: none;
+}
+.cv-textarea:focus-within, .cv-textarea { border-color: rgba(123,97,255,.35); background: rgba(123,97,255,.05); }
 
-% Education
-\section*{Education}
-\begin{itemize}[leftmargin=*, noitemsep, topsep=0pt]
-    \item Degree, University.
-\end{itemize}
+.cv-review-row {
+  display: flex; align-items: baseline; gap: var(--sp-md);
+  padding: var(--sp-xs) 0; border-bottom: 1px solid rgba(42,42,42,.4);
+  font-size: var(--fs-sm);
+}
+.cv-review-row:last-child { border-bottom: none; }
+.cv-review-key { width: clamp(5rem,13%,7.5rem); color: var(--muted); text-align: right; flex-shrink: 0; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing:.07em; }
+.cv-review-val { flex: 1; color: var(--text); }
+.cv-review-sub { color: var(--subtle); font-size: var(--fs-xs); }
 
-\end{document}
+/* step dots in statusbar */
+.cv-step-dots { margin-left: auto; display: flex; gap: 5px; align-items: center; }
+.cv-step-dots::before { content: ''; display:none; }
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('empty',this)">Empty State</button>
+  <button class="tab" onclick="show('filter',this)">Filter Config</button>
+  <button class="tab" onclick="show('profiles',this)">Profiles</button>
+  <button class="tab" onclick="show('help',this)">Help</button>
+  <button class="tab" onclick="show('scrape',this)">Scraping</button>
+  <button class="tab" onclick="show('emails',this)">📬 Email List</button>
+  <button class="tab" onclick="show('compose',this)">✦ Compose</button>
+  <button class="tab" onclick="show('cv-entry',this)">📄 CV · Start</button>
+  <button class="tab" onclick="show('cv-info',this)">CV · Info</button>
+  <button class="tab" onclick="show('cv-summary',this)">CV · Summary</button>
+  <button class="tab" onclick="show('cv-exp',this)">CV · Experience</button>
+  <button class="tab" onclick="show('cv-skills',this)">CV · Skills</button>
+  <button class="tab" onclick="show('cv-review',this)">CV · Review</button>
+</div>
+
+<div class="terminal">
+
+<!-- 1. EMPTY STATE -->
+<div class="screen active" id="screen-empty">
+  <div class="topbar">
+    <div class="topbar-left">Profile: <span>—</span></div>
+    <div class="topbar-title">Sprayer</div>
+    <div class="topbar-right">Jobs: <span>0</span></div>
+  </div>
+  <div class="content">
+    <div class="empty-state">
+      <pre class="empty-ascii">
+ ┌─────────────────────────┐
+ │  ░░░░░░░░░░░░░░░░░░░░░  │
+ │  ░  No jobs cached.  ░  │
+ │  ░░░░░░░░░░░░░░░░░░░░░  │
+ └─────────────────────────┘</pre>
+      <div class="empty-headline">No jobs found</div>
+      <div class="empty-sub">
+        Press <kbd>s</kbd> to scrape from all configured sources.<br>
+        Press <kbd>f</kbd> to set filters &nbsp;·&nbsp; <kbd>p</kbd> to manage profiles.<br>
+        Jobs appear here in real time as they're discovered.
+      </div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>s</kbd> scrape <span class="sep">│</span>
+    <kbd>f</kbd> filter <span class="sep">│</span>
+    <kbd>p</kbd> profiles <span class="sep">│</span>
+    <kbd>m</kbd> emails <span class="sep">│</span>
+    <kbd>↑↓</kbd> navigate <span class="sep">│</span>
+    <kbd>a</kbd> apply <span class="sep">│</span>
+    <kbd>?</kbd> help <span class="sep">│</span>
+    <kbd>ctrl+c</kbd> quit
+  </div>
+</div>
+
+<!-- 2. FILTER CONFIG -->
+<div class="screen" id="screen-filter">
+  <div class="topbar">
+    <div class="topbar-left">Profile: <span>Default</span></div>
+    <div class="topbar-title">Sprayer</div>
+    <div class="topbar-right">Jobs: <span>0</span></div>
+  </div>
+  <div class="modal-topbar">
+    <div class="modal-title">Filter Configuration</div>
+    <div class="modal-hint"><b>tab</b> next &nbsp;·&nbsp; <b>enter</b> apply &nbsp;·&nbsp; <b>esc</b> cancel</div>
+  </div>
+  <div class="filter-body">
+    <div class="field-row focused">
+      <div class="field-label">Keywords</div>
+      <div class="field-value">golang, rust, remote<span class="cursor"></span></div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Exclude</div>
+      <div class="field-value">senior, lead, manager</div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Locations</div>
+      <div class="field-value">remote, san francisco, new york</div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Companies</div>
+      <div class="field-value">google, microsoft, startup</div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Min Score</div>
+      <div class="field-value">0</div>
+    </div>
+  </div>
+  <div class="filter-statusbar">
+    <kbd>tab</kbd> next <span class="sep">│</span>
+    <kbd>enter</kbd> apply <span class="sep">│</span>
+    <kbd>esc</kbd> cancel <span class="sep">│</span>
+    <kbd>?</kbd> help <span class="sep">│</span>
+    <kbd>ctrl+c</kbd> quit
+    <div class="filter-profile">Profile: <span>Default</span> &nbsp;·&nbsp; ✓ No traps</div>
+  </div>
+</div>
+
+<!-- 3. PROFILES -->
+<div class="screen" id="screen-profiles">
+  <div class="topbar">
+    <div class="topbar-left">Profiles</div>
+    <div class="topbar-title">Sprayer</div>
+    <div class="topbar-right"><b>↑↓</b> nav &nbsp;·&nbsp; <b>enter</b> select &nbsp;·&nbsp; <b>n</b> new &nbsp;·&nbsp; <b>e</b> edit &nbsp;·&nbsp; <b>d</b> del &nbsp;·&nbsp; <b>esc</b> back</div>
+  </div>
+  <div class="content">
+    <div class="profiles-layout">
+      <div class="profiles-list">
+        <div class="list-header">Profiles</div>
+        <div class="list-items">
+          <div class="profile-item selected">
+            <div class="profile-item-name">▶ Default <span class="active-badge">active</span></div>
+            <div class="profile-item-sub">golang, rust, +1</div>
+          </div>
+        </div>
+      </div>
+      <div class="profiles-detail">
+        <div class="detail-section">
+          <div class="detail-section-title">Profile</div>
+          <div class="detail-row"><div class="detail-key">Name</div><div class="detail-val ac">Default</div></div>
+          <div class="detail-row"><div class="detail-key">Keywords</div><div class="detail-val">golang, rust, +1</div></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Filters</div>
+          <div class="detail-row"><div class="detail-key">Score range</div><div class="detail-val">0 – 100</div></div>
+          <div class="detail-row"><div class="detail-key">Exclude traps</div><div class="detail-val yes">yes</div></div>
+          <div class="detail-row"><div class="detail-key">Require email</div><div class="detail-val no">no</div></div>
+          <div class="detail-row"><div class="detail-key">Seniority</div><div class="detail-val">mid, senior, staff</div></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Scoring Weights</div>
+          <div class="bar-row"><div class="bar-label">Tech Match</div><div class="bar-track"><div class="bar-fill" style="width:30%"></div></div><div class="bar-pct">30%</div></div>
+          <div class="bar-row"><div class="bar-label">Seniority</div><div class="bar-track"><div class="bar-fill" style="width:20%"></div></div><div class="bar-pct">20%</div></div>
+          <div class="bar-row"><div class="bar-label">Location</div><div class="bar-track"><div class="bar-fill" style="width:15%"></div></div><div class="bar-pct">15%</div></div>
+          <div class="bar-row"><div class="bar-label">Company</div><div class="bar-track"><div class="bar-fill" style="width:10%"></div></div><div class="bar-pct">10%</div></div>
+          <div class="bar-row"><div class="bar-label">Salary</div><div class="bar-track"><div class="bar-fill" style="width:15%"></div></div><div class="bar-pct">15%</div></div>
+          <div class="bar-row"><div class="bar-label">Remote</div><div class="bar-track"><div class="bar-fill" style="width:10%"></div></div><div class="bar-pct">10%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>↑↓</kbd> select <span class="sep">│</span>
+    <kbd>enter</kbd> choose <span class="sep">│</span>
+    <kbd>n</kbd> new <span class="sep">│</span>
+    <kbd>esc</kbd> back <span class="sep">│</span>
+    <kbd>ctrl+c</kbd> quit
+  </div>
+</div>
+
+<!-- 4. HELP -->
+<div class="screen" id="screen-help">
+  <div class="topbar">
+    <div class="topbar-left"></div>
+    <div class="topbar-title">Sprayer — Help</div>
+    <div class="topbar-right"></div>
+  </div>
+  <div class="help-body">
+    <div class="help-section">
+      <div class="help-section-title">📋 Job List</div>
+      <div class="help-row"><div class="help-key">s</div><div class="help-desc">Scrape for new jobs</div></div>
+      <div class="help-row"><div class="help-key">f</div><div class="help-desc">Open filters</div></div>
+      <div class="help-row"><div class="help-key">p</div><div class="help-desc">Manage profiles</div></div>
+      <div class="help-row"><div class="help-key">m</div><div class="help-desc">View email drafts</div></div>
+      <div class="help-row"><div class="help-key">↑↓/jk</div><div class="help-desc">Navigate</div></div>
+      <div class="help-row"><div class="help-key">enter</div><div class="help-desc">Job detail</div></div>
+      <div class="help-row"><div class="help-key">a</div><div class="help-desc">Apply to job</div></div>
+    </div>
+    <div class="help-section">
+      <div class="help-section-title">🔍 Job Detail</div>
+      <div class="help-row"><div class="help-key">esc</div><div class="help-desc">Back to list</div></div>
+      <div class="help-row"><div class="help-key">e</div><div class="help-desc">Generate email</div></div>
+      <div class="help-row"><div class="help-key">a</div><div class="help-desc">Gen application</div></div>
+    </div>
+    <div class="help-section">
+      <div class="help-section-title">📬 Emails</div>
+      <div class="help-row"><div class="help-key">e</div><div class="help-desc">New email for job</div></div>
+      <div class="help-row"><div class="help-key">enter</div><div class="help-desc">Open compose</div></div>
+      <div class="help-row"><div class="help-key">ctrl+s</div><div class="help-desc">Send via pop</div></div>
+      <div class="help-row"><div class="help-key">r</div><div class="help-desc">Regenerate (mods)</div></div>
+      <div class="help-row"><div class="help-key">d</div><div class="help-desc">Delete draft</div></div>
+    </div>
+    <div class="help-section">
+      <div class="help-section-title">⌨ Global</div>
+      <div class="help-row"><div class="help-key">?</div><div class="help-desc">This help</div></div>
+      <div class="help-row"><div class="help-key">esc</div><div class="help-desc">Back / cancel</div></div>
+      <div class="help-row"><div class="help-key">ctrl+c</div><div class="help-desc">Quit</div></div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>esc</kbd> close <span class="sep">│</span> <kbd>ctrl+c</kbd> quit
+  </div>
+</div>
+
+<!-- 5. SCRAPING -->
+<div class="screen" id="screen-scrape">
+  <div class="topbar">
+    <div class="topbar-left">Profile: <span>Default</span></div>
+    <div class="topbar-title">Sprayer</div>
+    <div class="topbar-right">Jobs: <span>0</span></div>
+  </div>
+  <div class="content">
+    <div class="scrape-body">
+      <div class="scrape-title"><span class="spinner">◐</span> Scraping jobs…</div>
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill"></div></div>
+        <div class="progress-meta">
+          <div>Source 6/9 · <span style="color:var(--cyan)">Greenhouse</span></div>
+          <div class="pct">67%</div>
+        </div>
+      </div>
+      <div class="scrape-sub">Elapsed: <span>29s</span> &nbsp;·&nbsp; Found: <span>0</span> jobs so far<br>Jobs appear in real time as they're discovered.</div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>esc</kbd> cancel <span class="sep">│</span> <kbd>?</kbd> help <span class="sep">│</span> <kbd>ctrl+c</kbd> quit
+  </div>
+</div>
+
+<!-- 6. EMAIL LIST -->
+<div class="screen" id="screen-emails">
+  <div class="topbar">
+    <div class="topbar-left">Emails</div>
+    <div class="topbar-title">Sprayer</div>
+    <div class="topbar-right">Drafts: <span>2</span> &nbsp;·&nbsp; Sent: <span>1</span></div>
+  </div>
+  <div class="content" style="overflow-y:auto;">
+    <div style="display:flex;align-items:center;gap:var(--sp-sm);padding:var(--sp-xs) var(--sp-md);border-bottom:1px solid var(--border);font-size:var(--fs-xs);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">
+      <span style="width:4.5em;">Status</span>
+      <span style="width:clamp(5rem,18%,9rem);">Company</span>
+      <span style="flex:1;">Subject</span>
+      <span>Date</span>
+    </div>
+    <div class="email-row selected">
+      <div class="er-status draft">● draft</div>
+      <div class="er-company">Vercel</div>
+      <div class="er-subject">Application — Sr. Software Engineer · Go</div>
+      <div class="er-date">today</div>
+    </div>
+    <div class="email-row">
+      <div class="er-status sent">✓ sent</div>
+      <div class="er-company">PlanetScale</div>
+      <div class="er-subject">Application — Backend Engineer · Rust</div>
+      <div class="er-date">yesterday</div>
+    </div>
+    <div class="email-row">
+      <div class="er-status draft">● draft</div>
+      <div class="er-company">Fly.io</div>
+      <div class="er-subject">Application — Platform Engineer · Remote</div>
+      <div class="er-date">2d ago</div>
+    </div>
+    <div class="email-row">
+      <div class="er-status sent">✓ sent</div>
+      <div class="er-company">Stripe</div>
+      <div class="er-subject">Application — Go Infrastructure Engineer</div>
+      <div class="er-date">3d ago</div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>↑↓</kbd> navigate <span class="sep">│</span>
+    <kbd>enter</kbd> open <span class="sep">│</span>
+    <kbd>g</kbd> generate new <span class="sep">│</span>
+    <kbd>d</kbd> delete <span class="sep">│</span>
+    <kbd>esc</kbd> back
+    <span class="statusbar-right">✦ mods + pop</span>
+  </div>
+</div>
+
+<!-- 7. COMPOSE (pop-style) -->
+<div class="screen" id="screen-compose">
+  <div class="topbar">
+    <div class="topbar-left">Compose</div>
+    <div class="topbar-title">Sprayer</div>
+    <div class="topbar-right">Vercel &nbsp;·&nbsp; Score: <span>87</span></div>
+  </div>
+  <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+    <!-- pop envelope fields -->
+    <div style="border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div class="pop-field">
+        <div class="pop-lbl">From</div>
+        <div class="pop-val">you@example.com</div>
+      </div>
+      <div class="pop-field">
+        <div class="pop-lbl">To</div>
+        <div class="pop-val" style="color:var(--cyan)">jobs@vercel.com</div>
+      </div>
+      <div class="pop-field active">
+        <div class="pop-lbl">Subject</div>
+        <div class="pop-val">Application — Sr. Software Engineer · Vercel<span class="cursor"></span></div>
+      </div>
+      <div class="pop-field">
+        <div class="pop-lbl">Attach</div>
+        <div class="pop-val" style="color:var(--muted)">resume.pdf</div>
+      </div>
+    </div>
+    <!-- mods provenance hint -->
+    <div class="pop-gen-hint">
+      <span class="gen-pulse"></span>
+      generated by mods &nbsp;·&nbsp; ctrl+r to regenerate
+    </div>
+    <!-- body -->
+    <div class="pop-body">Hi Vercel team,
+
+I came across the Senior Software Engineer role and wanted to reach out directly — the work you're doing on edge infrastructure and deployment pipelines is exactly the problem space I want to be in.
+
+I've spent the last 4 years writing Go for distributed systems, most recently shipping a multi-tenant job orchestration service with sub-100ms p99 latencies. Happy to share code samples or jump on a call.
+
+—
+you@example.com · github.com/you</div>
+  </div>
+  <div class="statusbar">
+    <kbd>ctrl+s<<!-- ══════════════════════════════════════════
+     CV WIZARD — shared step indicator macro
+     Steps: info · summary · exp · projects · skills · education · review
+══════════════════════════════════════════ -->
+
+<!-- CV ENTRY — choose method -->
+<div class="screen" id="screen-cv-entry">
+  <div class="topbar">
+    <div class="topbar-left">Profiles</div>
+    <div class="topbar-title">Sprayer — New Profile</div>
+    <div class="topbar-right"></div>
+  </div>
+  <div class="content" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:var(--sp-lg);padding:var(--sp-xl);">
+
+    <div style="font-size:var(--fs-sm);color:var(--subtle);text-align:center;">
+      Sprayer uses your CV to match jobs by skills, seniority,<br>
+      and experience — and to personalize generated emails.
+    </div>
+
+    <!-- choice cards -->
+    <div style="display:flex;gap:var(--sp-md);width:min(480px,90%);">
+
+      <div class="cv-choice selected" id="choice-manual">
+        <div class="cv-choice-icon">✎</div>
+        <div class="cv-choice-label">Fill manually</div>
+        <div class="cv-choice-sub">Step through a form.<br>Takes ~3 minutes.</div>
+      </div>
+
+      <div class="cv-choice" id="choice-file">
+        <div class="cv-choice-icon">⤓</div>
+        <div class="cv-choice-label">Import file</div>
+        <div class="cv-choice-sub">.pdf, .tex, .md, .txt<br>Extracted via mods.</div>
+      </div>
+
+    </div>
+
+    <!-- file path row — shown when import selected -->
+    <div id="import-row" style="display:none;width:min(480px,90%);">
+      <div class="huh-field focused">
+        <div class="huh-label">File path</div>
+        <div class="huh-value">~/docs/cv.pdf<span class="cursor"></span></div>
+      </div>
+      <div style="font-size:var(--fs-xs);color:var(--muted);padding:var(--sp-xs) 0 0 calc(clamp(5.5rem,13%,8rem) + var(--sp-md));">
+        ✦ mods will extract fields · you review every step before saving
+      </div>
+    </div>
+
+  </div>
+  <div class="statusbar">
+    <kbd>←→</kbd> choose <span class="sep">│</span>
+    <kbd>enter</kbd> continue <span class="sep">│</span>
+    <kbd>esc</kbd> cancel
+  </div>
+</div>
+
+<!-- CV INFO — personal details -->
+<div class="screen" id="screen-cv-info">
+  <div class="topbar">
+    <div class="topbar-left">Profiles</div>
+    <div class="topbar-title">Sprayer — New Profile</div>
+    <div class="topbar-right"><span class="cv-steps" data-step="1"></span></div>
+  </div>
+  <div class="modal-topbar">
+    <div class="modal-title">Personal Info</div>
+    <div class="modal-hint"><b>tab</b> next field &nbsp;·&nbsp; <b>enter</b> continue &nbsp;·&nbsp; <b>esc</b> back</div>
+  </div>
+  <div class="cv-form-body">
+    <div class="huh-field focused">
+      <div class="huh-label">Name</div>
+      <div class="huh-value">Your Name<span class="cursor"></span></div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Job title</div>
+      <div class="huh-value huh-muted">e.g. Software Engineer</div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Email</div>
+      <div class="huh-value huh-muted">you@example.com</div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">GitHub</div>
+      <div class="huh-value huh-muted">github.com/you</div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">LinkedIn</div>
+      <div class="huh-value huh-muted">linkedin.com/in/you</div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Location</div>
+      <div class="huh-value huh-muted">City, Country</div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>tab / ↓</kbd> next field <span class="sep">│</span>
+    <kbd>↑</kbd> prev field <span class="sep">│</span>
+    <kbd>enter</kbd> continue <span class="sep">│</span>
+    <kbd>ctrl+s</kbd> save as-is <span class="sep">│</span>
+    <kbd>esc</kbd> back
+    <div class="cv-step-dots" data-step="1"></div>
+  </div>
+</div>
+
+<!-- CV SUMMARY — professional summary -->
+<div class="screen" id="screen-cv-summary">
+  <div class="topbar">
+    <div class="topbar-left">Profiles</div>
+    <div class="topbar-title">Sprayer — New Profile</div>
+    <div class="topbar-right"></div>
+  </div>
+  <div class="modal-topbar">
+    <div class="modal-title">Professional Summary</div>
+    <div class="modal-hint"><b>enter</b>↵ newline &nbsp;·&nbsp; <b>ctrl+enter</b> continue &nbsp;·&nbsp; <b>esc</b> back</div>
+  </div>
+  <div class="content" style="display:flex;flex-direction:column;padding:var(--sp-md) var(--sp-lg);gap:var(--sp-sm);">
+    <div style="font-size:var(--fs-xs);color:var(--muted);">
+      Used as context for email generation. 2–4 sentences is ideal.
+    </div>
+    <div class="cv-textarea">
+      Distributed systems engineer with 5 years of experience building high-throughput
+services in Go and Rust. Strong focus on observability, correctness, and
+operational simplicity. Previously at Acme Corp (backend infra) and Beta Inc
+(platform engineering).<span class="cursor"></span>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>ctrl+enter</kbd> continue <span class="sep">│</span>
+    <kbd>ctrl+s</kbd> save as-is <span class="sep">│</span>
+    <kbd>esc</kbd> back
+    <div class="cv-step-dots" data-step="2"></div>
+  </div>
+</div>
+
+<!-- CV EXPERIENCE — repeatable entry -->
+<div class="screen" id="screen-cv-exp">
+  <div class="topbar">
+    <div class="topbar-left">Profiles</div>
+    <div class="topbar-title">Sprayer — New Profile</div>
+    <div class="topbar-right"></div>
+  </div>
+  <div class="modal-topbar">
+    <div class="modal-title">Work Experience &nbsp;<span style="color:var(--muted);font-weight:400;font-size:var(--fs-xs);">entry 1 of 1</span></div>
+    <div class="modal-hint"><b>a</b> add another &nbsp;·&nbsp; <b>ctrl+enter</b> next section &nbsp;·&nbsp; <b>esc</b> back</div>
+  </div>
+  <div class="cv-form-body">
+    <div class="huh-field focused">
+      <div class="huh-label">Role</div>
+      <div class="huh-value">Senior Software Engineer<span class="cursor"></span></div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Company</div>
+      <div class="huh-value">Acme Corp</div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Period</div>
+      <div class="huh-value huh-muted">2021 – present</div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Stack</div>
+      <div class="huh-value">
+        <span class="huh-tag">Go</span>
+        <span class="huh-tag">Kafka</span>
+        <span class="huh-tag">PostgreSQL</span>
+        <span class="huh-tag">Kubernetes</span>
+        <span class="huh-add">+ add</span>
+      </div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Highlights</div>
+      <div class="huh-value" style="line-height:1.8;font-size:var(--fs-xs);color:var(--text);">
+        · Led migration from monolith → event-driven microservices (3× throughput)<br>
+        · Designed on-call rotation reducing MTTR from 45 min to 8 min<br>
+        <span class="huh-add">+ add line</span>
+      </div>
+    </div>
+
+    <!-- already added entries summary -->
+    <div style="margin-top:var(--sp-sm);padding-top:var(--sp-sm);border-top:1px solid var(--border);display:flex;align-items:center;gap:var(--sp-md);font-size:var(--fs-xs);">
+      <span style="color:var(--muted);">Added:</span>
+      <span style="color:var(--green);">✓ Senior Engineer @ Acme Corp</span>
+      <span class="huh-add" style="margin-left:auto;">[a] add another position</span>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>tab</kbd> next field <span class="sep">│</span>
+    <kbd>a</kbd> add another <span class="sep">│</span>
+    <kbd>ctrl+enter</kbd> next section <span class="sep">│</span>
+    <kbd>ctrl+s</kbd> save as-is <span class="sep">│</span>
+    <kbd>esc</kbd> back
+    <div class="cv-step-dots" data-step="3"></div>
+  </div>
+</div>
+
+<!-- CV SKILLS — tags input -->
+<div class="screen" id="screen-cv-skills">
+  <div class="topbar">
+    <div class="topbar-left">Profiles</div>
+    <div class="topbar-title">Sprayer — New Profile</div>
+    <div class="topbar-right"></div>
+  </div>
+  <div class="modal-topbar">
+    <div class="modal-title">Technical Skills</div>
+    <div class="modal-hint"><b>tab</b> next field &nbsp;·&nbsp; <b>space</b> add tag &nbsp;·&nbsp; <b>backspace</b> remove &nbsp;·&nbsp; <b>ctrl+enter</b> continue</div>
+  </div>
+  <div class="cv-form-body">
+    <div style="font-size:var(--fs-xs);color:var(--muted);padding-bottom:var(--sp-sm);border-bottom:1px solid var(--border);">
+      These become your profile's keyword pool — used for job matching and scoring.
+    </div>
+    <div class="huh-field focused">
+      <div class="huh-label">Languages</div>
+      <div class="huh-value">
+        <span class="huh-tag">Go</span>
+        <span class="huh-tag">Rust</span>
+        <span class="huh-tag">Python</span>
+        <span class="huh-tag">TypeScript</span>
+        <span class="huh-add">+ add<span class="cursor"></span></span>
+      </div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Frameworks</div>
+      <div class="huh-value">
+        <span class="huh-tag">gRPC</span>
+        <span class="huh-tag">Kafka</span>
+        <span class="huh-tag">Kubernetes</span>
+        <span class="huh-add">+ add</span>
+      </div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Databases</div>
+      <div class="huh-value">
+        <span class="huh-tag">PostgreSQL</span>
+        <span class="huh-tag">Redis</span>
+        <span class="huh-add">+ add</span>
+      </div>
+    </div>
+    <div class="huh-field">
+      <div class="huh-label">Seniority</div>
+      <div class="huh-value" style="color:var(--subtle);font-size:var(--fs-xs);">
+        <span class="huh-tag">mid</span>
+        <span class="huh-tag">senior</span>
+        <span class="huh-tag">staff</span>
+        <span class="huh-add">+ add</span>
+        &nbsp;<span style="color:var(--dim);">— inferred from experience · adjust if needed</span>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <kbd>tab</kbd> next field <span class="sep">│</span>
+    <kbd>space</kbd> confirm tag <span class="sep">│</span>
+    <kbd>backspace</kbd> remove <span class="sep">│</span>
+    <kbd>ctrl+enter</kbd> continue <span class="sep">│</span>
+    <kbd>ctrl+s</kbd> save as-is <span class="sep">│</span>
+    <kbd>esc</kbd> back
+    <div class="cv-step-dots" data-step="4"></div>
+  </div>
+</div>
+
+<!-- CV REVIEW — summary before saving -->
+<div class="screen" id="screen-cv-review">
+  <div class="topbar">
+    <div class="topbar-left">Profiles</div>
+    <div class="topbar-title">Sprayer — New Profile</div>
+    <div class="topbar-right"><span style="color:var(--green);">ready to save</span></div>
+  </div>
+  <div class="modal-topbar">
+    <div class="modal-title">Review Profile</div>
+    <div class="modal-hint"><b>enter</b> save &nbsp;·&nbsp; <b>tab</b> edit section &nbsp;·&nbsp; <b>esc</b> back</div>
+  </div>
+  <div class="cv-form-body">
+
+    <div class="cv-review-row">
+      <div class="cv-review-key">Name</div>
+      <div class="cv-review-val">Your Name &nbsp;<span class="cv-review-sub">· Software Engineer · SF / Remote</span></div>
+    </div>
+    <div class="cv-review-row">
+      <div class="cv-review-key">Summary</div>
+      <div class="cv-review-val" style="color:var(--subtle);font-style:italic;">"Distributed systems engineer with 5 years…"</div>
+    </div>
+    <div class="cv-review-row">
+      <div class="cv-review-key">Experience</div>
+      <div class="cv-review-val">
+        <span style="color:var(--bright);">Senior Engineer</span> @ <span style="color:var(--cyan);">Acme Corp</span> &nbsp;2021–now
+        <br><span style="color:var(--subtle);">Mid Engineer</span> @ <span style="color:var(--subtle);">Beta Inc</span> &nbsp;<span style="color:var(--muted);">2019–2021</span>
+      </div>
+    </div>
+    <div class="cv-review-row">
+      <div class="cv-review-key">Keywords</div>
+      <div class="cv-review-val">
+        <span class="huh-tag">Go</span><span class="huh-tag">Rust</span><span class="huh-tag">Python</span>
+        <span class="huh-tag">gRPC</span><span class="huh-tag">Kafka</span><span class="huh-tag">Kubernetes</span>
+        <span class="huh-tag">PostgreSQL</span><span class="huh-tag">Redis</span>
+        <span style="color:var(--muted);font-size:var(--fs-xs);">+2 more</span>
+      </div>
+    </div>
+    <div class="cv-review-row">
+      <div class="cv-review-key">Seniority</div>
+      <div class="cv-review-val"><span class="huh-tag">mid</span><span class="huh-tag">senior</span><span class="huh-tag">staff</span></div>
+    </div>
+    <div class="cv-review-row">
+      <div class="cv-review-key">Profile name</div>
+      <div class="cv-review-val">
+        <div class="huh-field focused" style="padding:0;background:transparent;border-left:none;">
+          <div class="huh-value">Default<span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="statusbar">
+    <kbd>enter</kbd> save profile <span class="sep">│</span>
+    <kbd>tab</kbd> edit section <span class="sep">│</span>
+    <kbd>esc</kbd> back
+    <div class="cv-step-dots" data-step="5"></div>
+  </div>
+</div>
+
+kbd>tab</kbd> next field <span class="sep">│</span>
+    <kbd>a</kbd> add entry <span class="sep">│</span>
+    <kbd>x</kbd> remove tag <span class="sep">│</span>
+    <kbd>enter</kbd> save profile <span class="sep">│</span>
+    <kbd>esc</kbd> back
+    <span class="statusbar-right">✓ ready</span>
+  </div>
+</div>
+
+</div><!-- /terminal -->
+
+<script>
+function show(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+const frames = ['◐','◓','◑','◒'];
+let i = 0;
+setInterval(() => {
+  const el = document.querySelector('.spinner');
+  if (el) el.textContent = frames[i++ % frames.length];
+}, 150);
+
+// CV choice toggle
+document.querySelectorAll('.cv-choice').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.cv-choice').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    const importRow = document.getElementById('import-row');
+    if (importRow) importRow.style.display = el.id === 'choice-file' ? 'block' : 'none';
+  });
+});
+
+// render step dots
+const STEPS = 5;
+document.querySelectorAll('.cv-step-dots').forEach(el => {
+  const step = parseInt(el.dataset.step) || 1;
+  el.innerHTML = Array.from({length: STEPS}, (_, i) =>
+    `<span style="width:6px;height:6px;border-radius:50%;background:${i < step ? 'var(--purple)' : 'var(--dim)'}"></span>`
+  ).join('');
+});
+
+</script>
+</body>
+</html>

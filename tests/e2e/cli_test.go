@@ -8,14 +8,14 @@ import (
 
 func TestE2E_CLI_Scrape_And_List(t *testing.T) {
 	// Build the CLI binary
-	cmd := exec.Command("go", "build", "-o", "sprayer-e2e", "./cmd/cli/main.go")
+	cmd := exec.Command("go", "build", "-o", "sprayer-e2e", "./cmd/sprayer/main.go")
 	cmd.Dir = "../.." // assume running from a subdir or fix path
 	// Easier: run go run directly
 	
 	root := "/home/user/openclaw-setup" // Hardcode for this env
 	
 	// 1. Scrape (Fast API only)
-	scrapeCmd := exec.Command("go", "run", "cmd/cli/main.go", "scrape", "--fast", "rust", "remote")
+	scrapeCmd := exec.Command("go", "run", "cmd/sprayer/main.go", "scrape", "--fast", "rust", "remote")
 	scrapeCmd.Dir = root
 	out, err := scrapeCmd.CombinedOutput()
 	if err != nil {
@@ -24,7 +24,7 @@ func TestE2E_CLI_Scrape_And_List(t *testing.T) {
 	t.Logf("Scrape Output: %s", string(out))
 
 	// 2. List
-	listCmd := exec.Command("go", "run", "cmd/cli/main.go", "list")
+	listCmd := exec.Command("go", "run", "cmd/sprayer/main.go", "list")
 	listCmd.Dir = root
 	listOut, err := listCmd.CombinedOutput()
 	if err != nil {

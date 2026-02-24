@@ -1,0 +1,13 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/sprayer ./cmd/sprayer"
+  bin = "./tmp/sprayer"
+  args_bin = ["-tui"]
+  include_ext = ["go", "html"]
+  exclude_dir = ["tmp", "tests", "scripts", "cv"]
+  delay = 300
+
+[screen]
+  clear_on_rebuild = true
