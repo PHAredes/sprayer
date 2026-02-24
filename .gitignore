@@ -1,6 +1,8 @@
 # binaries
 sprayer
 sprayer-cli
+sprayer-api
+sprayer-e2e
 
 # storage
 .sprayer/
