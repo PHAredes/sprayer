@@ -2,11 +2,11 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o ./tmp/sprayer ./cmd/sprayer"
+  cmd = "go build -o ./tmp/sprayer ./cmd/cli"
   bin = "./tmp/sprayer"
   args_bin = ["-tui"]
   include_ext = ["go", "html"]
-  exclude_dir = ["tmp", "tests", "scripts", "cv"]
+  exclude_dir = ["tmp", "scripts", "cv"]
   delay = 300
 
 [screen]
