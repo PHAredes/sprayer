@@ -136,4 +136,243 @@ var (
 	ModalHintStyle = lipgloss.NewStyle().
 			Background(Surface2).
 			Foreground(Muted)
+
+	// ── Filter fields ──────────────────────────────────────
+	FieldRowStyle = lipgloss.NewStyle().
+			Background(Background).
+			Foreground(Text)
+
+	FieldRowFocusedStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#13102a")).
+				Foreground(Bright)
+
+	FieldLabelStyle = lipgloss.NewStyle().
+			Background(Background).
+			Foreground(Subtle)
+
+	FieldLabelFocusedStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#13102a")).
+				Foreground(Purple)
+
+	CursorStyle = lipgloss.NewStyle().
+			Background(Purple).
+			Foreground(Purple)
+
+	// ── Profiles ───────────────────────────────────────────
+	ProfileItemStyle = lipgloss.NewStyle().
+				Background(Background).
+				Foreground(Text).
+				BorderStyle(lipgloss.NormalBorder()).
+				BorderLeft(true).
+				BorderForeground(Background)
+
+	ProfileItemSelectedStyle = lipgloss.NewStyle().
+					Background(lipgloss.Color("#13102a")).
+					Foreground(Purple).
+					BorderStyle(lipgloss.NormalBorder()).
+					BorderLeft(true).
+					BorderForeground(Purple)
+
+	ActiveBadgeStyle = lipgloss.NewStyle().
+				Foreground(Green).
+				Background(lipgloss.Color("#0d2b1e"))
+
+	DetailSectionTitleStyle = lipgloss.NewStyle().
+				Foreground(Muted).
+				Bold(true)
+
+	DetailKeyStyle = lipgloss.NewStyle().
+			Foreground(Subtle)
+
+	DetailValStyle = lipgloss.NewStyle().
+			Foreground(Text)
+
+	DetailValYesStyle = lipgloss.NewStyle().
+				Foreground(Green)
+
+	DetailValNoStyle = lipgloss.NewStyle().
+				Foreground(Muted)
+
+	DetailValAccentStyle = lipgloss.NewStyle().
+				Foreground(Cyan)
+
+	BarLabelStyle = lipgloss.NewStyle().
+			Foreground(Subtle)
+
+	BarTrackStyle = lipgloss.NewStyle().
+			Foreground(Dim)
+
+	BarFillStyle = lipgloss.NewStyle().
+			Foreground(Purple)
+
+	BarPctStyle = lipgloss.NewStyle().
+			Foreground(Subtle)
+
+	// ── Help ───────────────────────────────────────────────
+	HelpSectionTitleStyle = lipgloss.NewStyle().
+				Foreground(Cyan).
+				Bold(true)
+
+	HelpKeyStyle = lipgloss.NewStyle().
+			Foreground(Cyan).
+			Background(lipgloss.Color("#0d2b33"))
+
+	HelpDescStyle = lipgloss.NewStyle().
+			Foreground(Text)
+
+	// ── Scraping ───────────────────────────────────────────
+	SpinnerStyle = lipgloss.NewStyle().
+			Foreground(Purple)
+
+	ProgressFillStyle = lipgloss.NewStyle().
+				Foreground(Purple)
+
+	ProgressTrackStyle = lipgloss.NewStyle().
+				Foreground(Dim)
+
+	ProgressPctStyle = lipgloss.NewStyle().
+				Foreground(Purple).
+				Bold(true)
+
+	// ── Emails ─────────────────────────────────────────────
+	EmailRowStyle = lipgloss.NewStyle().
+			Background(Background).
+			Foreground(Text)
+
+	EmailRowSelectedStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#091f28")).
+				Foreground(Bright).
+				BorderStyle(lipgloss.NormalBorder()).
+				BorderLeft(true).
+				BorderForeground(Cyan)
+
+	EmailStatusDraftStyle = lipgloss.NewStyle().
+				Foreground(Yellow)
+
+	EmailStatusSentStyle = lipgloss.NewStyle().
+				Foreground(Green)
+
+	EmailCompanyStyle = lipgloss.NewStyle().
+				Foreground(Bright)
+
+	EmailCompanySelectedStyle = lipgloss.NewStyle().
+					Foreground(Cyan)
+
+	EmailSubjectStyle = lipgloss.NewStyle().
+				Foreground(Subtle)
+
+	EmailDateStyle = lipgloss.NewStyle().
+			Foreground(Muted)
+
+	EmailHeaderStyle = lipgloss.NewStyle().
+				Foreground(Muted)
+
+	// ── Compose ────────────────────────────────────────────
+	PopFieldStyle = lipgloss.NewStyle().
+			Background(Background).
+			Foreground(Text)
+
+	PopFieldActiveStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#13102a")).
+				Foreground(Bright)
+
+	PopLabelStyle = lipgloss.NewStyle().
+			Foreground(Muted)
+
+	PopLabelActiveStyle = lipgloss.NewStyle().
+				Foreground(Purple)
+
+	PopGenHintStyle = lipgloss.NewStyle().
+			Foreground(Purple)
+
+	PopBodyStyle = lipgloss.NewStyle().
+			Foreground(Text)
+
+	// ── CV Wizard ──────────────────────────────────────────
+	CVBreadcrumbStyle = lipgloss.NewStyle().
+				Foreground(Muted)
+
+	CVBreadcrumbCurrentStyle = lipgloss.NewStyle().
+					Foreground(Bright).
+					Bold(true).
+					Background(Surface4)
+
+	CVBreadcrumbDoneStyle = lipgloss.NewStyle().
+				Foreground(Purple)
+
+	CVBreadcrumbSepStyle = lipgloss.NewStyle().
+				Foreground(Dim)
+
+	CVChoiceStyle = lipgloss.NewStyle().
+			Foreground(Text).
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(BorderColor)
+
+	CVChoiceSelectedStyle = lipgloss.NewStyle().
+				Foreground(Bright).
+				BorderStyle(lipgloss.NormalBorder()).
+				BorderForeground(Purple).
+				Background(lipgloss.Color("#13102a"))
+
+	CVChoiceIconStyle = lipgloss.NewStyle().
+				Foreground(Muted)
+
+	CVChoiceIconSelectedStyle = lipgloss.NewStyle().
+					Foreground(Purple)
+
+	CVFormFieldStyle = lipgloss.NewStyle().
+				Background(Background).
+				Foreground(Text).
+				BorderStyle(lipgloss.NormalBorder()).
+				BorderLeft(true).
+				BorderForeground(Background)
+
+	CVFormFieldFocusedStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#13102a")).
+				Foreground(Bright).
+				BorderStyle(lipgloss.NormalBorder()).
+				BorderLeft(true).
+				BorderForeground(Purple)
+
+	CVFormLabelStyle = lipgloss.NewStyle().
+			Foreground(Subtle)
+
+	CVFormLabelFocusedStyle = lipgloss.NewStyle().
+				Foreground(Purple)
+
+	CVTagStyle = lipgloss.NewStyle().
+			Foreground(Cyan).
+			Background(lipgloss.Color("#0d2b33"))
+
+	CVTagAddStyle = lipgloss.NewStyle().
+			Foreground(Muted)
+
+	CVTagAddFocusedStyle = lipgloss.NewStyle().
+				Foreground(Purple)
+
+	CVTextareaStyle = lipgloss.NewStyle().
+			Foreground(Text).
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("#2d2157"))
+
+	CVReviewKeyStyle = lipgloss.NewStyle().
+				Foreground(Muted)
+
+	CVReviewValStyle = lipgloss.NewStyle().
+				Foreground(Text)
+
+	CVStepDotActiveStyle = lipgloss.NewStyle().
+				Foreground(Purple)
+
+	CVStepDotInactiveStyle = lipgloss.NewStyle().
+				Foreground(Dim)
+
+	// ── Placeholder text ───────────────────────────────────
+	PlaceholderStyle = lipgloss.NewStyle().
+			Foreground(Muted)
+
+	// ── Section label ──────────────────────────────────────
+	SectionLabelStyle = lipgloss.NewStyle().
+				Foreground(Muted).
+				Bold(true)
 )
